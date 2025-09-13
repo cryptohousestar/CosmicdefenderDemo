@@ -2,6 +2,15 @@
 import { useEffect, useRef } from "react";
 import Link from "next/link";
 
+interface Star {
+  x: number;
+  y: number;
+  r: number;
+  a: number;
+  p: number;
+  s: number;
+}
+
 export default function CosmicDefenderLanding() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -11,7 +20,7 @@ export default function CosmicDefenderLanding() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     const DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
-    let stars: any[] = [];
+    let stars: Star[] = [];
     function resize() {
       if (!canvas || !ctx) return;
       canvas.width = Math.floor(window.innerWidth * DPR);
