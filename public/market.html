@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Market Espacial</title>
+    <link rel="stylesheet" href="market.css">
+</head>
+<body>
+    <div class="market-container">
+        <h1 class="pixel-title">Tienda Espacial</h1>
+        <div class="market-main">
+            <!-- Catálogo de ítems -->
+            <div class="catalog-panel">
+                <h2>Catálogo</h2>
+                <div id="catalog-grid" class="catalog-grid"></div>
+            </div>
+            <!-- Inventario y slots de equipo -->
+            <div class="inventory-panel">
+                <h2>Inventario</h2>
+                <div id="inventory-grid" class="inventory-grid"></div>
+                <button id="sell-btn" class="pixel-btn">Sell</button>
+                <h2>Equipo de Nave</h2>
+                <div class="equip-panel">
+                    <div class="equip-slot" id="equip-ship">Nave</div>
+                    <div class="equip-slot" id="equip-weapon">Arma</div>
+                    <div class="equip-slot" id="equip-shield">Escudo</div>
+                    <div class="equip-slot" id="equip-engine">Motor</div>
+                </div>
+                <h2>Estadísticas de Nave</h2>
+                <div class="stats-panel">
+                    <div class="stat-item">
+                        <span class="stat-label">Vida:</span>
+                        <span id="stat-health" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Defensa:</span>
+                        <span id="stat-defense" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Ataque:</span>
+                        <span id="stat-attack" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Velocidad de Disparo:</span>
+                        <span id="stat-fireRate" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Escudo:</span>
+                        <span id="stat-shield" class="stat-value">0%</span>
+                    </div>
+                </div>
+                <div id="coins-display" class="coins-display">Monedas: 0</div>
+                <button onclick="debugLocalStorage()" style="margin-top: 10px; padding: 5px; background: #ff6b35; color: white; border: none; border-radius: 5px; cursor: pointer;">🔍 Debug localStorage</button>
+                <button onclick="addCoinsFromMarket(100)" style="margin-top: 10px; margin-left: 10px; padding: 5px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;">💰 +100 Monedas (Test)</button>
+            </div>
+        </div>
+    </div>
+    <script src="market.js"></script>
+</body>
+</html> 
