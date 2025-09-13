@@ -42,7 +42,7 @@ export default function CosmicDefenderLanding() {
     }
     let animationFrameId: number;
     function render(t: number) {
-      if (!ctx) return;
+      if (!ctx || !canvas) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       for (const st of stars) {
         const tw = Math.sin(st.p + t * st.s) * 0.5 + 0.5;
