@@ -1,0 +1,55 @@
+
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Modelo para los datos persistentes de los jugadores
+model Player {
+  wallet_address String   @id
+  username       String?
+  level          Int      @default(1)
+  experience     BigInt   @default(0)
+  createdAt      DateTime @default(now())
+
+  sessions GameSession[]
+}
+
+// Modelo para la configuración de los mundos o servidores de juego
+model GameServer {
+  server_id           String   @id
+  starflux_per_minute Decimal
+  matic_per_hour      Decimal
+  exp_multiplier      Decimal
+
+  sessions GameSession[]
+}
+
+// Modelo para registrar cada partida jugada
+model GameSession {
+  session_id          Int      @id @default(autoincrement())
+  player_wallet       String
+  server_id           String
+  time_played_seconds Int
+  starflux_earned     Decimal
+  matic_earned        Decimal
+  experience_gained   BigInt
+  played_at           DateTime @default(now())
+
+  player Player     @relation(fields: [player_wallet], references: [wallet_address])
+  server GameServer @relation(fields: [server_id], references: [server_id])
+}
+
+// Modelo 'User' de la documentación inicial
+model User {
+  id       Int    @id @default(autoincrement())
+  username String
+  email    String @unique
+}
