@@ -1,6 +1,6 @@
 // Naves con slots y sprites creativos
 const ships = [
-    { id: 'basic', name: 'Nave Antigua pero Funcional', sprite: [[0,12,0],[12,2,12],[12,2,12],[0,12,0]], color: '#666666', stats: {hp: 80, speed: 3, damage: 8}, slots: {weapon: 1, shield: 1, engine: 1}, price: 50, isBasic: true },
+    { id: 'basic', name: 'Nave Antigua pero Funcional', sprite: [[0,12,0],[12,2,12],[12,2,12],[0,12,0]], color: '#666666', stats: {hp: 80, speed: 3, damage: 8}, slots: {weapon: 1, shield: 1, engine: 1}, price: 0, isBasic: true },
     { id: 'titan', name: 'Titan', sprite: [[0,1,1,0],[1,2,2,1],[1,2,2,1],[3,1,1,3]], color: '#ff9900', stats: {hp: 150, speed: 2, damage: 16}, slots: {weapon: 3, shield: 3, engine: 2} },
     { id: 'astra', name: 'Astra', sprite: [[0,4,0],[4,2,4],[4,2,4],[0,4,0]], color: '#ff66ff', stats: {hp: 130, speed: 3, damage: 14}, slots: {weapon: 3, shield: 2, engine: 2} },
     { id: 'nebula', name: 'Nebula', sprite: [[0,5,5,0],[5,2,2,5],[5,2,2,5],[0,5,5,0]], color: '#8888ff', stats: {hp: 115, speed: 4, damage: 13}, slots: {weapon: 2, shield: 2, engine: 2} },
@@ -23,7 +23,7 @@ const shipPrices = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000];
 // Orden de menor a mayor poder (Basic, Delta, Vortex, Comet, Blaze, Phantom, Spectre, Nova, Nebula, Astra, Titan)
 const shipOrder = ['basic','delta','vortex','comet','blaze','phantom','spectre','nova','nebula','astra','titan'];
 ships.forEach(ship => {
-    if (!ship.price) { // Solo asignar precio si no tiene uno ya (como la nave básica)
+    if (ship.price === undefined) { // Solo asignar precio si no está definido (0 es válido)
     const idx = shipOrder.indexOf(ship.id);
     ship.price = shipPrices[idx];
     }
@@ -208,16 +208,8 @@ function renderCatalog() {
 }
 
 function buyItem(item) {
-    // Permitir comprar naves si no tienes nave equipada, independientemente de la ubicación
+    // Permitir comprar en cualquier lugar
     const hasShip = localStorage.getItem('hasShip') === 'true';
-    const inCentralSafeZone = localStorage.getItem('inCentralSafeZone') === 'true';
-    
-    if (item.type === 'ship' && !hasShip) {
-        // Permitir comprar nave si no tienes una equipada
-    } else if (!inCentralSafeZone) {
-        alert('Solo puedes comprar dentro de la zona segura central.');
-        return;
-    }
     if (coins < item.price) {
         alert('No tienes suficientes monedas.');
         return;
@@ -235,6 +227,7 @@ function buyItem(item) {
     
     // Agregar al inventario
     inventory[idx] = item;
+    saveInventory(); // Guardar inventario actualizado
     
     // Si es una nave y no hay nave equipada, equiparla automáticamente
     if (item.type === 'ship') {
@@ -268,15 +261,8 @@ function buyItem(item) {
 
 function equipItemFromInventory(index) {
     const hasShip = localStorage.getItem('hasShip') === 'true';
-    const inCentralSafeZone = localStorage.getItem('inCentralSafeZone') === 'true';
     
-    // Permitir equipar naves si no tienes nave equipada, independientemente de la ubicación
-    if (inventory[index] && inventory[index].type === 'ship' && !hasShip) {
-        // Permitir equipar nave si no tienes una equipada
-    } else if (!inCentralSafeZone) {
-        alert('Solo puedes equipar dentro de la zona segura central.');
-        return;
-    }
+    // Permitir equipar en cualquier lugar
     const item = inventory[index];
     if (!item) return;
     if (item.type === 'ship') {
@@ -285,6 +271,8 @@ function equipItemFromInventory(index) {
         equipped.shield = null;
         equipped.engine = null;
         saveEquipped();
+        inventory[index] = null; // Eliminar del inventario después de equipar
+        saveInventory(); // Guardar inventario actualizado
         localStorage.setItem('hasShip', 'true');
         renderEquip();
         updateStatsDisplay();
@@ -295,10 +283,16 @@ function equipItemFromInventory(index) {
     // Equipar mejoras solo si hay slots
     if (item.type === 'weapon' && countEquipped('weapon') < equipped.ship.slots.weapon) {
         equipped.weapon = item;
+        inventory[index] = null; // Eliminar del inventario después de equipar
+        saveInventory(); // Guardar inventario actualizado
     } else if (item.type === 'shield' && countEquipped('shield') < equipped.ship.slots.shield) {
         equipped.shield = item;
+        inventory[index] = null; // Eliminar del inventario después de equipar
+        saveInventory(); // Guardar inventario actualizado
     } else if (item.type === 'engine' && countEquipped('engine') < equipped.ship.slots.engine) {
         equipped.engine = item;
+        inventory[index] = null; // Eliminar del inventario después de equipar
+        saveInventory(); // Guardar inventario actualizado
     }
     saveEquipped();
     renderEquip();
@@ -312,9 +306,8 @@ function renderInventory() {
     const grid = document.getElementById('inventory-grid');
     grid.innerHTML = '';
     const hasShip = localStorage.getItem('hasShip') === 'true';
-    const inCentralSafeZone = localStorage.getItem('inCentralSafeZone') === 'true';
-    // Se puede vender si estás en zona segura O si no tienes nave equipada
-    const canSell = inCentralSafeZone || !hasShip;
+    // Se puede vender en cualquier lugar
+    const canSell = true;
     for (let i = 0; i < 30; i++) {
         const slot = document.createElement('div');
         slot.className = 'inventory-slot empty';
@@ -332,20 +325,10 @@ function renderInventory() {
         }
         slot.onclick = () => {
             if (sellMode && inventory[i]) {
-                const hasShip = localStorage.getItem('hasShip') === 'true';
-                const canSellInLocation = localStorage.getItem('inCentralSafeZone') === 'true';
-                
-                // Permitir vender naves si no tienes nave equipada, independientemente de la ubicación
-                if (inventory[i].type === 'ship' && !hasShip) {
-                    // Permitir vender nave si no tienes una equipada
-                } else if (!canSellInLocation) {
-                    alert('Solo puedes vender dentro de la zona segura central.');
-                    sellMode = false;
-                    document.getElementById('sell-btn').classList.remove('selected');
-                    return;
-                }
+                // Permitir vender en cualquier lugar
                 coins += Math.floor((inventory[i].price || 0) / 2);
                 inventory[i] = null;
+                saveInventory(); // Guardar inventario actualizado
                 renderInventory();
                 renderCoins();
                 sellMode = false;
@@ -356,15 +339,11 @@ function renderInventory() {
         };
         grid.appendChild(slot);
     }
-    // Desactivar botón de venta si no se puede vender
+    // Botón de venta siempre habilitado
     const sellBtn = document.getElementById('sell-btn');
     if (sellBtn) {
-        sellBtn.disabled = !canSell;
-        sellBtn.title = canSell ? '' : 'Solo puedes vender dentro de la zona segura central.';
-        if (!canSell && sellMode) {
-            sellMode = false;
-            sellBtn.classList.remove('selected');
-        }
+        sellBtn.disabled = false;
+        sellBtn.title = '';
     }
 }
 
@@ -599,6 +578,11 @@ document.getElementById('sell-btn').onclick = () => {
 function saveEquipped() {
     localStorage.setItem('equipped', JSON.stringify(equipped));
 }
+
+function saveInventory() {
+    localStorage.setItem('inventory', JSON.stringify(inventory));
+}
+
 function loadEquipped() {
     const data = localStorage.getItem('equipped');
     if (data) {
@@ -611,8 +595,16 @@ function loadEquipped() {
     updateStatsDisplay(); // Ensure stats are displayed when loading equipped items
 }
 
+function loadInventory() {
+    const saved = localStorage.getItem('inventory');
+    if (saved) {
+        inventory = JSON.parse(saved);
+    }
+}
+
 // Inicializar
 loadEquipped();
+loadInventory(); // Cargar inventario guardado
 renderCatalog();
 renderInventory();
 renderEquip();

@@ -949,14 +949,8 @@ class CosmicDefender {
         if (confirmClanBtn && !confirmClanBtn._listenerAdded) {
             confirmClanBtn.addEventListener('click', () => {
                 if (this.playerClan !== null) {
-            this.showMenu();
-                    const startButton = document.getElementById('startGame');
-                    if (startButton) {
-                        startButton.textContent = `Iniciar Juego (${this.clans[this.playerClan].name})`;
-                        startButton.disabled = false;
-                        startButton.style.background = '#4CAF50';
-                        startButton.style.cursor = 'pointer';
-                    }
+                    // Ir al market en lugar del menú
+                    showMarketInIframe();
                 }
             });
             confirmClanBtn._listenerAdded = true;
@@ -2336,7 +2330,20 @@ class CosmicDefender {
     }
     
     isGameReady() {
-        return this.playerClan !== null && this.hasShip;
+        // Verificar que hay clan seleccionado
+        if (this.playerClan === null) return false;
+        
+        // Verificar que hasShip es true
+        if (!this.hasShip) return false;
+        
+        // Verificar que realmente hay una nave equipada
+        const equippedData = localStorage.getItem('equipped');
+        if (!equippedData) return false;
+        
+        const equipped = JSON.parse(equippedData);
+        if (!equipped.ship) return false;
+        
+        return true;
     }
     
 
@@ -2624,7 +2631,13 @@ class CosmicDefender {
             if (this.playerClan === null) {
                 alert('Por favor selecciona un clan primero');
             } else if (!this.hasShip) {
-                alert('Necesitas comprar una nave primero. Cuesta 50 monedas.');
+                alert('Necesitas comprar una nave primero. La nave básica es gratuita.');
+            } else {
+                // Verificar si hay nave equipada
+                const equippedData = localStorage.getItem('equipped');
+                if (!equippedData || !JSON.parse(equippedData).ship) {
+                    alert('Necesitas equipar una nave para poder despegar. Ve al market y equipa una nave.');
+                }
             }
             return;
         }
@@ -3337,26 +3350,6 @@ class CosmicDefender {
                 <p style="font-size: 24px; margin-bottom: 30px;">Tu nave ha sido destruida</p>
                 <p style="font-size: 18px; margin-bottom: 20px; color: #ccc;">La nave se ha guardado en tu inventario</p>
                 <p style="font-size: 16px; margin-bottom: 40px; color: #888;">Necesitas equipar una nave para continuar jugando</p>
-                <button id="buyNewShip" style="
-                    background: #ff6b35;
-                    color: white;
-                    border: none;
-                    padding: 15px 30px;
-                    font-size: 18px;
-                    border-radius: 10px;
-                    cursor: pointer;
-                    margin: 10px;
-                ">🛸 Comprar Nueva Nave (50 monedas)</button>
-                <button id="openMarket" style="
-                    background: #00bfff;
-                    color: white;
-                    border: none;
-                    padding: 15px 30px;
-                    font-size: 18px;
-                    border-radius: 10px;
-                    cursor: pointer;
-                    margin: 10px;
-                ">🏪 Abrir Market</button>
                 <button id="backToMenuFromDestroyed" style="
                     background: #666;
                     color: white;
@@ -3372,19 +3365,7 @@ class CosmicDefender {
         
         document.body.appendChild(destroyedScreen);
         
-        // Event listeners
-        document.getElementById('buyNewShip').addEventListener('click', () => {
-            document.body.removeChild(destroyedScreen);
-            window.open('market.html', '_blank');
-            this.showMenu();
-        });
-        
-        document.getElementById('openMarket').addEventListener('click', () => {
-            document.body.removeChild(destroyedScreen);
-            window.open('market.html', '_blank');
-            this.showMenu();
-        });
-        
+        // Event listener
         document.getElementById('backToMenuFromDestroyed').addEventListener('click', () => {
             document.body.removeChild(destroyedScreen);
             this.showMenu();
@@ -6574,4 +6555,52 @@ window.addEventListener('load', () => {
     window.addEventListener('beforeunload', () => {
         game.cleanup();
     });
-}); 
+});
+
+// ===== FUNCIONES PARA INTEGRACIÓN CON MARKET =====
+
+// Función para mostrar market en iframe
+function showMarketInIframe() {
+    // Ocultar todos los menús
+    const gameMenu = document.getElementById('gameMenu');
+    const clanSelector = document.getElementById('clanSelector');
+    const bandoSelector = document.getElementById('bandoSelector');
+    
+    if (gameMenu) gameMenu.style.display = 'none';
+    if (clanSelector) clanSelector.style.display = 'none';
+    if (bandoSelector) bandoSelector.style.display = 'none';
+    
+    // Crear iframe del market
+    const iframe = document.createElement('iframe');
+    iframe.src = 'market.html';
+    iframe.style.cssText = `
+        position: fixed;
+        top: 50px;
+        left: 50px;
+        width: calc(100vw - 100px);
+        height: calc(100vh - 100px);
+        border: 3px solid #00bfff;
+        border-radius: 10px;
+        z-index: 9999;
+        background: #000;
+        box-shadow: 0 0 20px rgba(0, 191, 255, 0.5);
+    `;
+    iframe.id = 'marketIframe';
+    
+    document.body.appendChild(iframe);
+}
+
+// Función para volver del market al juego
+window.startGameFromMarket = function() {
+    // Remover iframe
+    const iframe = document.getElementById('marketIframe');
+    if (iframe) {
+        iframe.remove();
+    }
+    
+    // Actualizar estado de nave desde localStorage antes de iniciar
+    if (window.game) {
+        window.game.checkShipStatus(); // Actualizar this.hasShip desde localStorage
+        window.game.startGame();
+    }
+}; 

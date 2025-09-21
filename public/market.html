@@ -7,6 +7,18 @@
     <link rel="stylesheet" href="market.css">
 </head>
 <body>
+    <!-- Botón STAR ENGINE para volver al juego -->
+    <div style="position: fixed; top: 10px; right: 10px; z-index: 10000;">
+        <button onclick="window.parent.startGameFromMarket()" 
+                style="background: #ffd700; color: #222; border: 2px solid #ff6600; 
+                       padding: 15px 25px; font-size: 16px; font-weight: bold; 
+                       border-radius: 8px; cursor: pointer; box-shadow: 0 0 15px #ffd700;
+                       font-family: 'Press Start 2P', monospace; text-shadow: 1px 1px 0 #fff;
+                       transition: all 0.2s ease;">
+            🚀 STAR ENGINE
+        </button>
+    </div>
+    
     <div class="market-container">
         <h1 class="pixel-title">Tienda Espacial</h1>
         <div class="market-main">
@@ -51,8 +63,6 @@
                     </div>
                 </div>
                 <div id="coins-display" class="coins-display">Monedas: 0</div>
-                <button onclick="debugLocalStorage()" style="margin-top: 10px; padding: 5px; background: #ff6b35; color: white; border: none; border-radius: 5px; cursor: pointer;">🔍 Debug localStorage</button>
-                <button onclick="addCoinsFromMarket(100)" style="margin-top: 10px; margin-left: 10px; padding: 5px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;">💰 +100 Monedas (Test)</button>
             </div>
         </div>
     </div>
