@@ -6556,35 +6556,16 @@ function showMarketInIframe() {
     const iframe = document.createElement('iframe');
     iframe.src = 'market.html';
     
-    if (isMobile) {
-        // Estilos específicos para móvil - pantalla completa
-        iframe.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            border: none;
-            z-index: 9999;
-            background: #000;
-            transform: scale(1);
-            transform-origin: top left;
-        `;
-    } else {
-        // Estilos para PC - con márgenes
-        iframe.style.cssText = `
-            position: fixed;
-            top: 50px;
-            left: 50px;
-            width: calc(100vw - 100px);
-            height: calc(100vh - 100px);
-            border: 3px solid #00bfff;
-            border-radius: 10px;
-            z-index: 9999;
-            background: #000;
-            box-shadow: 0 0 20px rgba(0, 191, 255, 0.5);
-        `;
-    }
+    iframe.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        border: none;
+        z-index: 9999;
+        background: #000;
+    `;
     
     iframe.id = 'marketIframe';
     document.body.appendChild(iframe);

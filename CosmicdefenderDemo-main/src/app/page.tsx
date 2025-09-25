@@ -16,12 +16,7 @@ interface Star {
 
 export default function CosmicDefenderLanding() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [touchEnabled, setTouchEnabled] = useState(false);
   const [inputController] = useState(() => new InputController());
-
-  useEffect(() => {
-    setTouchEnabled(isTouchPreferred());
-  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -160,13 +155,11 @@ export default function CosmicDefenderLanding() {
         </div>
       </div>
 
-      {touchEnabled && (
-        <TouchHUD
-          onMove={(vec) => inputController.setMove(vec)}
-          onFire={(down) => inputController.setFire(down)}
-          onSkill={(id, down) => inputController.setSkill(id, down)}
-        />
-      )}
+      <TouchHUD
+        onMove={(vec) => inputController.setMove(vec)}
+        onFire={(down) => inputController.setFire(down)}
+        onSkill={(id, down) => inputController.setSkill(id, down)}
+      />
     </>
   );
 }
