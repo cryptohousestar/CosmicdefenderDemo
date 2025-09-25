@@ -2,7 +2,8 @@ export function isTouchPreferred(): boolean {
 	if (typeof window === "undefined") return false;
 	const coarse = typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse)").matches;
 	const maxTouch = typeof navigator !== "undefined" && (navigator as any).maxTouchPoints > 0;
-	return !!(coarse || maxTouch);
+	const touchEvents = 'ontouchstart' in window;
+	return !!(coarse || maxTouch || touchEvents);
 }
 
 export function getDevicePixelRatio(): number {
