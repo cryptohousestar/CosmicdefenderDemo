@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cosmic Defender - Marte</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .planet-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            background: linear-gradient(135deg, #cc3300 0%, #ff6600 50%, #cc3300 100%);
+            overflow: hidden;
+        }
+        
+        .planet-ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        .planet-stats {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #ff6600;
+            border-radius: 10px;
+            padding: 15px;
+            color: white;
+            font-family: 'Courier New', monospace;
+            pointer-events: auto;
+        }
+        
+        .planet-info {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #ff6600;
+            border-radius: 10px;
+            padding: 15px;
+            color: white;
+            font-family: 'Courier New', monospace;
+            pointer-events: auto;
+            text-align: right;
+        }
+        
+        .wave-info {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            border: 3px solid #ff6600;
+            border-radius: 15px;
+            padding: 20px;
+            color: white;
+            text-align: center;
+            display: none;
+        }
+        
+        .wave-number {
+            font-size: 48px;
+            font-weight: bold;
+            color: #ff6600;
+            margin-bottom: 10px;
+        }
+        
+        .wave-enemies {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        
+        .wave-progress {
+            width: 300px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px auto;
+        }
+        
+        .wave-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6600, #ffaa00);
+            transition: width 0.3s ease;
+        }
+        
+        .back-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #ff6600;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            pointer-events: auto;
+        }
+        
+        .back-button:hover {
+            background: rgba(255, 102, 0, 0.2);
+        }
+        
+        .planet-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 50% 50%, #ff6600 0%, #cc3300 100%);
+        }
+        
+        .mars-dust {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(255, 100, 0, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 60%, rgba(255, 150, 0, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, rgba(255, 200, 0, 0.1) 0%, transparent 50%);
+            animation: dustStorm 8s infinite;
+        }
+        
+        @keyframes dustStorm {
+            0%, 100% { opacity: 0.3; transform: translateX(0); }
+            50% { opacity: 0.8; transform: translateX(20px); }
+        }
+        
+        .player-join-notification {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 255, 0, 0.9);
+            border: 2px solid #00ff00;
+            border-radius: 10px;
+            padding: 15px;
+            color: white;
+            text-align: center;
+            display: none;
+            z-index: 100;
+        }
+        
+        .player-leave-notification {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 0, 0, 0.9);
+            border: 2px solid #ff0000;
+            border-radius: 10px;
+            padding: 15px;
+            color: white;
+            text-align: center;
+            display: none;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div class="planet-container">
+        <div class="planet-background">
+            <div class="mars-dust"></div>
+        </div>
+        
+        <div class="planet-ui">
+            <div class="planet-stats">
+                <div>Nivel: <span id="planet-level">1</span></div>
+                <div>HP: <span id="planet-hp">100/100</span></div>
+                <div>EXP: <span id="planet-exp">0/100</span></div>
+                <div>Puntos: <span id="planet-score">0</span></div>
+                <div>Monedas: <span id="planet-coins">0</span></div>
+                <div>Enemigos: <span id="planet-enemies">0</span></div>
+                <div>Jugadores: <span id="players-count">1/5</span></div>
+                <div>Bots IA: <span id="bots-count">4</span></div>
+                <div>Estado: <span id="ai-status">🟢 IA Activa</span></div>
+            </div>
+            
+            <div class="planet-info">
+                <div>Planeta: <span id="current-planet">Marte</span></div>
+                <div>Oleada: <span id="current-wave">1</span></div>
+                <div>Tiempo: <span id="planet-time">00:00</span></div>
+                <div>Enemigos Restantes: <span id="enemies-remaining">50</span></div>
+                <div>Tu ID: <span id="player-id">1</span></div>
+            </div>
+            
+            <button class="back-button" onclick="window.location.href='index.html'">← Volver al Mapa PvP</button>
+            
+            <div class="player-join-notification" id="playerJoinNotification">
+                <div>¡Nuevo jugador se unió!</div>
+                <div id="newPlayerName">Jugador</div>
+            </div>
+            
+            <div class="player-leave-notification" id="playerLeaveNotification">
+                <div>Un jugador se desconectó</div>
+                <div id="leftPlayerName">Jugador</div>
+            </div>
+            
+            <div class="wave-info" id="waveInfo">
+                <div class="wave-number" id="waveNumber">OLEADA 1</div>
+                <div class="wave-enemies" id="waveEnemies">50 Enemigos</div>
+                <div class="wave-progress">
+                    <div class="wave-progress-fill" id="waveProgressFill"></div>
+                </div>
+                <div id="waveStatus">Preparando oleada...</div>
+            </div>
+        </div>
+        
+        <canvas id="planetCanvas" width="1200" height="800"></canvas>
+    </div>
+    
+    <script>
+        // Mars Dungeon Game with Multiplayer Support (PvE Only)
+        class MarsDungeon {
+            constructor() {
+                this.canvas = document.getElementById('planetCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.gameState = 'playing';
+                this.players = [];
+                this.bots = [];
+                this.enemies = [];
+                this.bullets = [];
+                this.enemyBullets = [];
+                this.particles = [];
+                this.coins = [];
+                
+                // Player stats
+                this.level = 1;
+                this.exp = 0;
+                this.expToNext = 100;
+                this.score = 0;
+                this.coins = 0;
+                this.health = 100;
+                this.maxHealth = 100;
+                
+                // Wave system
+                this.currentWave = 1;
+                this.maxWaves = 50;
+                this.enemiesInWave = 50;
+                this.enemiesRemaining = 50;
+                this.enemiesKilled = 0;
+                this.waveStartTime = Date.now();
+                this.gameStartTime = Date.now();
+                
+                // Controls
+                this.keys = {};
+                this.mouse = { x: 0, y: 0, clicked: false };
+                this.lastShot = 0;
+                this.fireRate = 300;
+                
+                // Mars specific
+                this.planetName = "Marte";
+                this.planetColor = "#ff6600";
+                this.gravity = 0.38;
+                this.temperature = -63; // Celsius
+                
+                // Multiplayer
+                this.maxPlayers = 5;
+                this.currentPlayerId = 1;
+                this.playerNames = ['Alpha', 'Beta', 'Gamma', 'Delta', 'Epsilon'];
+                this.playerColors = ['#00ff00', '#00ffff', '#ffff00', '#ff00ff', '#ff8800'];
+                this.isLocalPlayer = true;
+                
+                // Nombres realistas para jugadores simulados
+                this.realisticNames = [
+                    'Alex', 'Sarah', 'Mike', 'Emma', 'David', 'Lisa', 'John', 'Maria',
+                    'Chris', 'Anna', 'Tom', 'Sophie', 'Ryan', 'Laura', 'Mark', 'Julia',
+                    'Steve', 'Nina', 'Paul', 'Kate', 'Dan', 'Rachel', 'Matt', 'Clara',
+                    'Nick', 'Eva', 'Rob', 'Maya', 'Sam', 'Zoe', 'Tim', 'Luna',
+                    'Jack', 'Iris', 'Ben', 'Rose', 'Luke', 'Dawn', 'Max', 'Star',
+                    'Leo', 'Nova', 'Kai', 'Aurora', 'Zane', 'Sky', 'Jade', 'River'
+                ];
+                
+                this.realisticColors = [
+                    '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57',
+                    '#ff9ff3', '#54a0ff', '#5f27cd', '#00d2d3', '#ff9f43',
+                    '#10ac84', '#ee5a24', '#575fcf', '#3c40c6', '#0fbcf9',
+                    '#26de81', '#fed330', '#fd79a8', '#fdcb6e', '#6c5ce7'
+                ];
+                
+                this.init();
+            }
+            
+            init() {
+                this.setupEventListeners();
+                this.createLocalPlayer();
+                this.createBots();
+                this.startWave();
+                this.gameLoop();
+                this.simulateMultiplayer();
+                this.setupDemoControls();
+            }
+            
+            setupEventListeners() {
+                document.addEventListener('keydown', (e) => {
+                    this.keys[e.key.toLowerCase()] = true;
+                });
+                
+                document.addEventListener('keyup', (e) => {
+                    this.keys[e.key.toLowerCase()] = false;
+                });
+                
+                this.canvas.addEventListener('mousemove', (e) => {
+                    const rect = this.canvas.getBoundingClientRect();
+                    this.mouse.x = e.clientX - rect.left;
+                    this.mouse.y = e.clientY - rect.top;
+                });
+                
+                this.canvas.addEventListener('click', () => {
+                    this.mouse.clicked = true;
+                });
+            }
+            
+            createLocalPlayer() {
+                const player = {
+                    id: this.currentPlayerId,
+                    x: this.canvas.width / 2,
+                    y: this.canvas.height / 2,
+                    width: 30,
+                    height: 30,
+                    speed: 5,
+                    health: this.health,
+                    maxHealth: this.maxHealth,
+                    damage: 25,
+                    angle: 0,
+                    name: this.playerNames[0],
+                    color: this.playerColors[0],
+                    isLocalPlayer: true,
+                    isBot: false
+                };
+                this.players.push(player);
+            }
+            
+            createBots() {
+                for (let i = 1; i < this.maxPlayers; i++) {
+                    const bot = {
+                        id: i + 1,
+                        x: 100 + i * 200,
+                        y: 100,
+                        width: 25,
+                        height: 25,
+                        speed: 4,
+                        health: 80,
+                        maxHealth: 80,
+                        damage: 20,
+                        angle: 0,
+                        name: this.playerNames[i],
+                        color: this.playerColors[i],
+                        isLocalPlayer: false,
+                        isBot: true,
+                        lastShot: 0,
+                        fireRate: 500,
+                        target: null,
+                        // AI avanzada
+                        aiLevel: Math.floor(Math.random() * 3) + 1, // 1-3
+                        behavior: ['aggressive', 'defensive', 'balanced'][Math.floor(Math.random() * 3)],
+                        lastDirectionChange: 0,
+                        directionChangeInterval: 2000 + Math.random() * 3000,
+                        preferredDistance: 80 + Math.random() * 120,
+                        dodgeCooldown: 0,
+                        lastDodge: 0,
+                        // Bonificaciones de IA
+                        attackBonus: 0,
+                        defenseBonus: 0,
+                        speedBonus: 0,
+                        accuracyBonus: 0,
+                        // Estados especiales
+                        isDodging: false,
+                        isCharging: false,
+                        chargeCooldown: 0,
+                        lastCharge: 0,
+                        // Tácticas avanzadas
+                        formationPosition: i,
+                        lastFormationUpdate: 0,
+                        tacticalMode: 'normal', // normal, flanking, retreat, charge
+                        healthThreshold: 0.3 + Math.random() * 0.4 // 30-70%
+                    };
+                    
+                    // Aplicar bonificaciones según nivel de IA
+                    this.applyAIBonuses(bot);
+                    this.bots.push(bot);
+                }
+            }
+            
+            applyAIBonuses(bot) {
+                switch(bot.aiLevel) {
+                    case 1: // IA Básica
+                        bot.attackBonus = 5;
+                        bot.defenseBonus = 3;
+                        bot.speedBonus = 2;
+                        bot.accuracyBonus = 0.1;
+                        break;
+                    case 2: // IA Intermedia
+                        bot.attackBonus = 12;
+                        bot.defenseBonus = 8;
+                        bot.speedBonus = 5;
+                        bot.accuracyBonus = 0.2;
+                        bot.damage += bot.attackBonus;
+                        bot.health += bot.defenseBonus * 5;
+                        bot.maxHealth += bot.defenseBonus * 5;
+                        bot.speed += bot.speedBonus * 0.5;
+                        break;
+                    case 3: // IA Avanzada
+                        bot.attackBonus = 20;
+                        bot.defenseBonus = 15;
+                        bot.speedBonus = 8;
+                        bot.accuracyBonus = 0.3;
+                        bot.damage += bot.attackBonus;
+                        bot.health += bot.defenseBonus * 8;
+                        bot.maxHealth += bot.defenseBonus * 8;
+                        bot.speed += bot.speedBonus * 0.8;
+                        bot.fireRate = Math.max(200, bot.fireRate - 100);
+                        break;
+                }
+            }
+            
+            simulateMultiplayer() {
+                // Simulación SOLO cuando NO hay jugadores reales
+                setInterval(() => {
+                    // Solo simular si NO hay jugadores reales (solo el local)
+                    const realPlayers = this.players.filter(p => !p.isSimulated);
+                    if (Math.random() < 0.1 && 
+                        realPlayers.length === 1 && // Solo el jugador local
+                        this.bots.length > 0) {
+                        this.simulatePlayerJoin();
+                    }
+                }, 10000);
+                
+                setInterval(() => {
+                    // Solo desconectar jugadores simulados
+                    const simulatedPlayers = this.players.filter(p => p.isSimulated);
+                    if (Math.random() < 0.05 && simulatedPlayers.length > 0) {
+                        this.simulatePlayerLeave();
+                    }
+                }, 15000);
+            }
+            
+            simulatePlayerJoin() {
+                const botIndex = Math.floor(Math.random() * this.bots.length);
+                const bot = this.bots[botIndex];
+                
+                // Generar nombre realista para el jugador simulado
+                const availableNames = this.realisticNames.filter(name => 
+                    !this.players.some(p => p.name === name) && 
+                    !this.bots.some(b => b.name === name)
+                );
+                
+                const randomName = availableNames.length > 0 
+                    ? availableNames[Math.floor(Math.random() * availableNames.length)]
+                    : this.realisticNames[Math.floor(Math.random() * this.realisticNames.length)];
+                
+                const randomColor = this.realisticColors[Math.floor(Math.random() * this.realisticColors.length)];
+                
+                // Convertir bot a jugador simulado con nombre realista
+                bot.isBot = false;
+                bot.isLocalPlayer = false;
+                bot.isSimulated = true;
+                bot.name = randomName;
+                bot.color = randomColor;
+                bot.originalBotName = bot.name; // Guardar nombre original del bot
+                
+                this.players.push(bot);
+                this.bots.splice(botIndex, 1);
+                
+                this.showPlayerJoinNotification(randomName);
+                this.updatePlayerCounts();
+            }
+            
+            simulatePlayerLeave() {
+                // Solo desconectar jugadores simulados
+                const simulatedPlayers = this.players.filter(p => !p.isLocalPlayer && p.isSimulated);
+                if (simulatedPlayers.length > 0) {
+                    const playerIndex = Math.floor(Math.random() * simulatedPlayers.length);
+                    const player = simulatedPlayers[playerIndex];
+                    
+                    // Convertir jugador simulado de vuelta a bot
+                    player.isBot = true;
+                    player.isLocalPlayer = false;
+                    player.isSimulated = false;
+                    player.name = player.originalBotName || this.playerNames[player.id - 1] || 'Bot';
+                    player.color = this.playerColors[player.id - 1] || '#888888';
+                    this.bots.push(player);
+                    
+                    const playerArrayIndex = this.players.findIndex(p => p.id === player.id);
+                    this.players.splice(playerArrayIndex, 1);
+                    
+                    this.showPlayerLeaveNotification(player.name);
+                    this.updatePlayerCounts();
+                }
+            }
+            
+            // Método para jugadores reales (llamado por sistema de red real)
+            realPlayerJoin(playerData) {
+                if (this.players.length < this.maxPlayers) {
+                    // Si hay jugadores simulados, convertirlos de vuelta a bots
+                    this.convertSimulatedToBots();
+                    
+                    const newPlayer = {
+                        id: playerData.id,
+                        x: playerData.x || this.canvas.width / 2,
+                        y: playerData.y || this.canvas.height / 2,
+                        width: 30,
+                        height: 30,
+                        speed: 5,
+                        health: 100,
+                        maxHealth: 100,
+                        damage: 25,
+                        angle: 0,
+                        name: playerData.name,
+                        color: playerData.color,
+                        isLocalPlayer: false,
+                        isBot: false,
+                        isSimulated: false // Jugador real
+                    };
+                    
+                    this.players.push(newPlayer);
+                    this.showPlayerJoinNotification(newPlayer.name);
+                    this.updatePlayerCounts();
+                }
+            }
+            
+            realPlayerLeave(playerId) {
+                const playerIndex = this.players.findIndex(p => p.id === playerId && !p.isLocalPlayer);
+                if (playerIndex !== -1) {
+                    const player = this.players[playerIndex];
+                    this.players.splice(playerIndex, 1);
+                    this.showPlayerLeaveNotification(player.name);
+                    this.updatePlayerCounts();
+                }
+            }
+            
+            // Métodos para la demo
+            addRealPlayer() {
+                if (this.players.length < this.maxPlayers) {
+                    const availableNames = this.realisticNames.filter(name => 
+                        !this.players.some(p => p.name === name) &&
+                        !this.bots.some(b => b.name === name)
+                    );
+                    
+                    if (availableNames.length > 0) {
+                        const randomName = availableNames[Math.floor(Math.random() * availableNames.length)];
+                        const randomColor = this.realisticColors[Math.floor(Math.random() * this.realisticColors.length)];
+                        
+                        this.realPlayerJoin({
+                            id: Date.now() + Math.random(),
+                            name: randomName,
+                            color: randomColor,
+                            x: Math.random() * this.canvas.width,
+                            y: Math.random() * this.canvas.height
+                        });
+                    }
+                }
+            }
+            
+            removeRealPlayer() {
+                const realPlayers = this.players.filter(p => !p.isLocalPlayer && !p.isSimulated);
+                if (realPlayers.length > 0) {
+                    const randomPlayer = realPlayers[Math.floor(Math.random() * realPlayers.length)];
+                    this.realPlayerLeave(randomPlayer.id);
+                }
+            }
+            
+            // Convertir jugadores simulados de vuelta a bots cuando llega un jugador real
+            convertSimulatedToBots() {
+                const simulatedPlayers = this.players.filter(p => p.isSimulated);
+                simulatedPlayers.forEach(player => {
+                    // Convertir de vuelta a bot
+                    player.isBot = true;
+                    player.isSimulated = false;
+                    player.name = player.originalBotName || this.playerNames[player.id - 1] || 'Bot';
+                    player.color = this.playerColors[player.id - 1] || '#888888';
+                    
+                    // Mover de players a bots
+                    const playerIndex = this.players.findIndex(p => p.id === player.id);
+                    this.players.splice(playerIndex, 1);
+                    this.bots.push(player);
+                    
+                    this.showPlayerLeaveNotification(player.name);
+                });
+            }
+            
+            showPlayerJoinNotification(playerName) {
+                const notification = document.getElementById('playerJoinNotification');
+                document.getElementById('newPlayerName').textContent = playerName;
+                notification.style.display = 'block';
+                
+                setTimeout(() => {
+                    notification.style.display = 'none';
+                }, 3000);
+            }
+            
+            showPlayerLeaveNotification(playerName) {
+                const notification = document.getElementById('playerLeaveNotification');
+                document.getElementById('leftPlayerName').textContent = playerName;
+                notification.style.display = 'block';
+                
+                setTimeout(() => {
+                    notification.style.display = 'none';
+                }, 3000);
+            }
+            
+            updatePlayerCounts() {
+                const realPlayers = this.players.filter(p => !p.isSimulated).length;
+                const simulatedPlayers = this.players.filter(p => p.isSimulated).length;
+                const totalPlayers = this.players.length;
+                
+                document.getElementById('players-count').textContent = `${totalPlayers}/${this.maxPlayers}`;
+                document.getElementById('bots-count').textContent = this.bots.length;
+                
+                // Actualizar estado de IA (sin revelar que hay simulados)
+                const aiStatusElement = document.getElementById('ai-status');
+                if (realPlayers > 1 || simulatedPlayers > 0) {
+                    aiStatusElement.textContent = '🟢 Multijugador Activo';
+                    aiStatusElement.style.color = '#00ff00';
+                } else {
+                    aiStatusElement.textContent = '🟢 IA Avanzada Activa';
+                    aiStatusElement.style.color = '#00ff00';
+                }
+                
+                // Logs internos (solo para desarrollo)
+                if (realPlayers > 1) {
+                    console.log(`🎮 Multijugador Real: ${realPlayers} jugadores + ${this.bots.length} bots`);
+                } else if (simulatedPlayers > 0) {
+                    console.log(`🤖 Simulación Activa: ${realPlayers} real + ${simulatedPlayers} simulados + ${this.bots.length} bots`);
+                } else {
+                    console.log(`👤 Modo Solitario: ${realPlayers} jugador + ${this.bots.length} bots con IA Avanzada`);
+                }
+            }
+            
+            setupDemoControls() {
+                // Agregar controles de demostración para probar el sistema
+                const demoDiv = document.createElement('div');
+                demoDiv.style.cssText = `
+                    position: fixed;
+                    top: 100px;
+                    right: 20px;
+                    background: rgba(0, 0, 0, 0.8);
+                    border: 2px solid #ff6600;
+                    border-radius: 10px;
+                    padding: 15px;
+                    color: white;
+                    font-family: Arial, sans-serif;
+                    z-index: 1000;
+                    pointer-events: auto;
+                `;
+                
+                demoDiv.innerHTML = `
+                    <h4>🎮 Demo Multijugador</h4>
+                    <button onclick="window.gameDemo.addRealPlayer()" style="margin: 5px; padding: 5px 10px; background: #ff6600; border: none; border-radius: 5px; color: white; cursor: pointer;">➕ Agregar Jugador Real</button><br>
+                    <button onclick="window.gameDemo.removeRealPlayer()" style="margin: 5px; padding: 5px 10px; background: #ff0000; border: none; border-radius: 5px; color: white; cursor: pointer;">➖ Quitar Jugador Real</button><br>
+                    <small>Los simulados se convierten en bots automáticamente</small>
+                `;
+                
+                document.body.appendChild(demoDiv);
+                
+                // Hacer el juego accesible globalmente para la demo
+                window.gameDemo = this;
+            }
+            
+            startWave() {
+                this.enemiesInWave = 50 + (this.currentWave - 1) * 10;
+                this.enemiesRemaining = this.enemiesInWave;
+                this.enemiesKilled = 0;
+                this.waveStartTime = Date.now();
+                
+                this.showWaveInfo();
+                this.spawnEnemies();
+            }
+            
+            showWaveInfo() {
+                const waveInfo = document.getElementById('waveInfo');
+                const waveNumber = document.getElementById('waveNumber');
+                const waveEnemies = document.getElementById('waveEnemies');
+                
+                waveNumber.textContent = `OLEADA ${this.currentWave}`;
+                waveEnemies.textContent = `${this.enemiesInWave} Enemigos`;
+                
+                waveInfo.style.display = 'block';
+                
+                setTimeout(() => {
+                    waveInfo.style.display = 'none';
+                }, 3000);
+            }
+            
+            spawnEnemies() {
+                const enemiesToSpawn = Math.min(12, this.enemiesRemaining);
+                
+                for (let i = 0; i < enemiesToSpawn; i++) {
+                    this.spawnEnemy();
+                }
+            }
+            
+            spawnEnemy() {
+                const side = Math.floor(Math.random() * 4);
+                let x, y;
+                
+                switch(side) {
+                    case 0: x = Math.random() * this.canvas.width; y = -50; break;
+                    case 1: x = this.canvas.width + 50; y = Math.random() * this.canvas.height; break;
+                    case 2: x = Math.random() * this.canvas.width; y = this.canvas.height + 50; break;
+                    case 3: x = -50; y = Math.random() * this.canvas.height; break;
+                }
+                
+                const enemy = {
+                    x: x,
+                    y: y,
+                    width: 40 + Math.random() * 30,
+                    height: 40 + Math.random() * 30,
+                    speed: 2.5 + Math.random() * 2,
+                    health: 60 + this.currentWave * 12,
+                    maxHealth: 60 + this.currentWave * 12,
+                    damage: 12 + this.currentWave * 5,
+                    type: 'mars_enemy',
+                    lastShot: 0,
+                    fireRate: 600 + Math.random() * 600,
+                    angle: 0,
+                    color: '#ff6600'
+                };
+                
+                this.enemies.push(enemy);
+            }
+            
+            updatePlayer() {
+                if (this.keys['w'] || this.keys['arrowup']) {
+                    this.player.y = Math.max(0, this.player.y - this.player.speed);
+                }
+                if (this.keys['s'] || this.keys['arrowdown']) {
+                    this.player.y = Math.min(this.canvas.height - this.player.height, this.player.y + this.player.speed);
+                }
+                if (this.keys['a'] || this.keys['arrowleft']) {
+                    this.player.x = Math.max(0, this.player.x - this.player.speed);
+                }
+                if (this.keys['d'] || this.keys['arrowright']) {
+                    this.player.x = Math.min(this.canvas.width - this.player.width, this.player.x + this.player.speed);
+                }
+                
+                const dx = this.mouse.x - (this.player.x + this.player.width / 2);
+                const dy = this.mouse.y - (this.player.y + this.player.height / 2);
+                this.player.angle = Math.atan2(dy, dx);
+                
+                if (this.mouse.clicked && Date.now() - this.lastShot > this.fireRate) {
+                    this.shoot(this.player);
+                    this.lastShot = Date.now();
+                }
+                this.mouse.clicked = false;
+            }
+            
+            updateAllies() {
+                this.allies.forEach(ally => {
+                    let nearestEnemy = null;
+                    let nearestDistance = Infinity;
+                    
+                    this.enemies.forEach(enemy => {
+                        const dx = enemy.x - ally.x;
+                        const dy = enemy.y - ally.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance < nearestDistance) {
+                            nearestDistance = distance;
+                            nearestEnemy = enemy;
+                        }
+                    });
+                    
+                    if (nearestEnemy) {
+                        ally.target = nearestEnemy;
+                        
+                        const dx = nearestEnemy.x - ally.x;
+                        const dy = nearestEnemy.y - ally.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance > 100) {
+                            ally.x += (dx / distance) * ally.speed;
+                            ally.y += (dy / distance) * ally.speed;
+                        }
+                        
+                        ally.angle = Math.atan2(dy, dx);
+                        
+                        if (Date.now() - ally.lastShot > ally.fireRate) {
+                            this.shoot(ally);
+                            ally.lastShot = Date.now();
+                        }
+                    }
+                });
+            }
+            
+            shoot(shooter) {
+                const bullet = {
+                    x: shooter.x + shooter.width / 2 - 2,
+                    y: shooter.y + shooter.height / 2 - 2,
+                    width: 4,
+                    height: 4,
+                    speed: 8,
+                    angle: shooter.angle,
+                    damage: shooter.damage,
+                    isPlayerBullet: shooter.isPlayer || shooter.color
+                };
+                this.bullets.push(bullet);
+            }
+            
+            updateEnemies() {
+                this.enemies.forEach((enemy, index) => {
+                    let target = this.player;
+                    let nearestDistance = this.getDistance(enemy, this.player);
+                    
+                    this.allies.forEach(ally => {
+                        const distance = this.getDistance(enemy, ally);
+                        if (distance < nearestDistance) {
+                            nearestDistance = distance;
+                            target = ally;
+                        }
+                    });
+                    
+                    const dx = target.x - enemy.x;
+                    const dy = target.y - enemy.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance > 0) {
+                        enemy.x += (dx / distance) * enemy.speed;
+                        enemy.y += (dy / distance) * enemy.speed;
+                        enemy.angle = Math.atan2(dy, dx);
+                    }
+                    
+                    if (Date.now() - enemy.lastShot > enemy.fireRate) {
+                        this.enemyShoot(enemy);
+                        enemy.lastShot = Date.now();
+                    }
+                    
+                    if (this.checkCollision(enemy, this.player)) {
+                        this.player.health -= enemy.damage;
+                        this.enemies.splice(index, 1);
+                        this.addDamageParticles(this.player, '#ff0000');
+                    }
+                    
+                    this.allies.forEach((ally, allyIndex) => {
+                        if (this.checkCollision(enemy, ally)) {
+                            ally.health -= enemy.damage;
+                            this.enemies.splice(index, 1);
+                            this.addDamageParticles(ally, '#ff0000');
+                            
+                            if (ally.health <= 0) {
+                                this.allies.splice(allyIndex, 1);
+                            }
+                        }
+                    });
+                });
+                
+                if (this.enemies.length < 12 && this.enemiesRemaining > 0) {
+                    this.spawnEnemies();
+                }
+            }
+            
+            enemyShoot(enemy) {
+                const dx = this.player.x - enemy.x;
+                const dy = this.player.y - enemy.y;
+                const angle = Math.atan2(dy, dx);
+                
+                const bullet = {
+                    x: enemy.x + enemy.width / 2 - 2,
+                    y: enemy.y + enemy.height / 2 - 2,
+                    width: 4,
+                    height: 4,
+                    speed: 4,
+                    angle: angle,
+                    damage: enemy.damage
+                };
+                this.enemyBullets.push(bullet);
+            }
+            
+            updateBullets() {
+                this.bullets.forEach((bullet, bulletIndex) => {
+                    bullet.x += Math.cos(bullet.angle) * bullet.speed;
+                    bullet.y += Math.sin(bullet.angle) * bullet.speed;
+                    
+                    this.enemies.forEach((enemy, enemyIndex) => {
+                        if (this.checkCollision(bullet, enemy)) {
+                            enemy.health -= bullet.damage;
+                            this.bullets.splice(bulletIndex, 1);
+                            this.addDamageParticles(enemy, '#ff6600');
+                            
+                            if (enemy.health <= 0) {
+                                this.enemies.splice(enemyIndex, 1);
+                                this.enemiesKilled++;
+                                this.enemiesRemaining--;
+                                this.score += 100;
+                                this.exp += 10;
+                                
+                                this.coins.push({
+                                    x: enemy.x + enemy.width / 2,
+                                    y: enemy.y + enemy.height / 2,
+                                    value: 25,
+                                    life: 300
+                                });
+                                
+                                if (this.enemiesRemaining <= 0) {
+                                    this.completeWave();
+                                }
+                            }
+                        }
+                    });
+                    
+                    if (bullet.x < 0 || bullet.x > this.canvas.width || 
+                        bullet.y < 0 || bullet.y > this.canvas.height) {
+                        this.bullets.splice(bulletIndex, 1);
+                    }
+                });
+                
+                this.enemyBullets.forEach((bullet, bulletIndex) => {
+                    bullet.x += Math.cos(bullet.angle) * bullet.speed;
+                    bullet.y += Math.sin(bullet.angle) * bullet.speed;
+                    
+                    if (this.checkCollision(bullet, this.player)) {
+                        this.player.health -= bullet.damage;
+                        this.enemyBullets.splice(bulletIndex, 1);
+                        this.addDamageParticles(this.player, '#ff0000');
+                    }
+                    
+                    this.allies.forEach(ally => {
+                        if (this.checkCollision(bullet, ally)) {
+                            ally.health -= bullet.damage;
+                            this.enemyBullets.splice(bulletIndex, 1);
+                            this.addDamageParticles(ally, '#ff0000');
+                        }
+                    });
+                    
+                    if (bullet.x < 0 || bullet.x > this.canvas.width || 
+                        bullet.y < 0 || bullet.y > this.canvas.height) {
+                        this.enemyBullets.splice(bulletIndex, 1);
+                    }
+                });
+            }
+            
+            updateCoins() {
+                this.coins.forEach((coin, index) => {
+                    const dx = this.player.x - coin.x;
+                    const dy = this.player.y - coin.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < 100) {
+                        coin.x += (dx / distance) * 3;
+                        coin.y += (dy / distance) * 3;
+                    }
+                    
+                    if (this.checkCollision(coin, this.player)) {
+                        this.coins += coin.value;
+                        this.coins.splice(index, 1);
+                    }
+                    
+                    coin.life--;
+                    if (coin.life <= 0) {
+                        this.coins.splice(index, 1);
+                    }
+                });
+            }
+            
+            updateParticles() {
+                this.particles.forEach((particle, index) => {
+                    particle.x += particle.vx;
+                    particle.y += particle.vy;
+                    particle.life--;
+                    
+                    if (particle.life <= 0) {
+                        this.particles.splice(index, 1);
+                    }
+                });
+            }
+            
+            addDamageParticles(target, color) {
+                for (let i = 0; i < 8; i++) {
+                    this.particles.push({
+                        x: target.x + target.width / 2,
+                        y: target.y + target.height / 2,
+                        vx: (Math.random() - 0.5) * 4,
+                        vy: (Math.random() - 0.5) * 4,
+                        life: 20,
+                        color: color
+                    });
+                }
+            }
+            
+            completeWave() {
+                this.currentWave++;
+                
+                if (this.currentWave > this.maxWaves) {
+                    alert(`¡Felicidades! Has completado Marte en ${this.formatTime(Date.now() - this.gameStartTime)}`);
+                    window.location.href = 'dungeon.html';
+                    return;
+                }
+                
+                setTimeout(() => {
+                    this.startWave();
+                }, 2000);
+            }
+            
+            getDistance(obj1, obj2) {
+                const dx = obj2.x - obj1.x;
+                const dy = obj2.y - obj1.y;
+                return Math.sqrt(dx * dx + dy * dy);
+            }
+            
+            checkCollision(rect1, rect2) {
+                return rect1.x < rect2.x + rect2.width &&
+                       rect1.x + rect1.width > rect2.x &&
+                       rect1.y < rect2.y + rect2.height &&
+                       rect1.y + rect1.height > rect2.y;
+            }
+            
+            formatTime(ms) {
+                const seconds = Math.floor(ms / 1000);
+                const minutes = Math.floor(seconds / 60);
+                const remainingSeconds = seconds % 60;
+                return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+            }
+            
+            updateUI() {
+                document.getElementById('planet-level').textContent = this.level;
+                document.getElementById('planet-hp').textContent = `${this.player.health}/${this.player.maxHealth}`;
+                document.getElementById('planet-exp').textContent = `${this.exp}/${this.expToNext}`;
+                document.getElementById('planet-score').textContent = this.score;
+                document.getElementById('planet-coins').textContent = this.coins;
+                document.getElementById('planet-enemies').textContent = this.enemies.length;
+                document.getElementById('allies-count').textContent = this.allies.length;
+                document.getElementById('current-wave').textContent = this.currentWave;
+                document.getElementById('enemies-remaining').textContent = this.enemiesRemaining;
+                document.getElementById('planet-time').textContent = this.formatTime(Date.now() - this.gameStartTime);
+                
+                const progress = (this.enemiesKilled / this.enemiesInWave) * 100;
+                document.getElementById('waveProgressFill').style.width = `${progress}%`;
+            }
+            
+            render() {
+                this.ctx.fillStyle = '#cc3300';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                this.drawPlayer();
+                this.allies.forEach(ally => this.drawAlly(ally));
+                this.enemies.forEach(enemy => this.drawEnemy(enemy));
+                this.bullets.forEach(bullet => this.drawBullet(bullet));
+                this.enemyBullets.forEach(bullet => this.drawEnemyBullet(bullet));
+                this.coins.forEach(coin => this.drawCoin(coin));
+                this.particles.forEach(particle => this.drawParticle(particle));
+            }
+            
+            drawPlayer() {
+                this.ctx.save();
+                this.ctx.translate(this.player.x + this.player.width / 2, this.player.y + this.player.height / 2);
+                this.ctx.rotate(this.player.angle);
+                
+                this.ctx.fillStyle = '#00ffff';
+                this.ctx.beginPath();
+                this.ctx.moveTo(15, 0);
+                this.ctx.lineTo(-10, -8);
+                this.ctx.lineTo(-5, 0);
+                this.ctx.lineTo(-10, 8);
+                this.ctx.closePath();
+                this.ctx.fill();
+                
+                this.ctx.strokeStyle = '#ffffff';
+                this.ctx.lineWidth = 2;
+                this.ctx.stroke();
+                
+                this.ctx.restore();
+            }
+            
+            drawAlly(ally) {
+                this.ctx.save();
+                this.ctx.translate(ally.x + ally.width / 2, ally.y + ally.height / 2);
+                this.ctx.rotate(ally.angle);
+                
+                this.ctx.fillStyle = ally.color;
+                this.ctx.fillRect(-ally.width / 2, -ally.height / 2, ally.width, ally.height);
+                
+                this.ctx.strokeStyle = '#ffffff';
+                this.ctx.lineWidth = 1;
+                this.ctx.strokeRect(-ally.width / 2, -ally.height / 2, ally.width, ally.height);
+                
+                this.ctx.restore();
+                
+                this.ctx.fillStyle = ally.color;
+                this.ctx.font = '12px Arial';
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText(ally.name, ally.x + ally.width / 2, ally.y - 10);
+            }
+            
+            drawEnemy(enemy) {
+                this.ctx.fillStyle = enemy.color;
+                this.ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+                
+                this.ctx.strokeStyle = '#ffffff';
+                this.ctx.lineWidth = 1;
+                this.ctx.strokeRect(enemy.x, enemy.y, enemy.width, enemy.height);
+            }
+            
+            drawBullet(bullet) {
+                if (bullet.isPlayerBullet) {
+                    this.ctx.fillStyle = bullet.isPlayerBullet === true ? '#00ffff' : bullet.isPlayerBullet;
+                } else {
+                    this.ctx.fillStyle = '#00ffff';
+                }
+                this.ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+            }
+            
+            drawEnemyBullet(bullet) {
+                this.ctx.fillStyle = '#ff6600';
+                this.ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+            }
+            
+            drawCoin(coin) {
+                this.ctx.fillStyle = '#ffff00';
+                this.ctx.beginPath();
+                this.ctx.arc(coin.x, coin.y, 5, 0, Math.PI * 2);
+                this.ctx.fill();
+                
+                this.ctx.strokeStyle = '#ffaa00';
+                this.ctx.lineWidth = 1;
+                this.ctx.stroke();
+            }
+            
+            drawParticle(particle) {
+                this.ctx.fillStyle = particle.color;
+                this.ctx.globalAlpha = particle.life / 20;
+                this.ctx.fillRect(particle.x, particle.y, 3, 3);
+                this.ctx.globalAlpha = 1;
+            }
+            
+            update() {
+                if (this.gameState === 'playing' && this.player.health > 0) {
+                    this.updatePlayer();
+                    this.updateAllies();
+                    this.updateEnemies();
+                    this.updateBullets();
+                    this.updateCoins();
+                    this.updateParticles();
+                    this.updateUI();
+                } else if (this.player.health <= 0) {
+                    alert(`Game Over! Puntuación: ${this.score}`);
+                    window.location.href = 'dungeon.html';
+                }
+            }
+            
+            gameLoop() {
+                this.update();
+                this.render();
+                requestAnimationFrame(() => this.gameLoop());
+            }
+        }
+        
+        window.addEventListener('load', () => {
+            new MarsDungeon();
+        });
+    </script>
+</body>
+</html> 

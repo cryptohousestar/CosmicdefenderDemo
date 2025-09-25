@@ -1,0 +1,88 @@
+COSMIC DEFENDER — ROADMAP MÓVIL/TÁCTIL (SIN REFACTORIZAR game.js)
+
+Objetivo
+- Soporte móvil/tablet en vertical y horizontal.
+- Activar HUD táctil dinámicamente (joystick + disparo + skills) si el dispositivo es táctil.
+- Mantener compatibilidad en navegadores modernos (Chrome, Safari iOS, Firefox, Edge).
+- Cambios mínimos en backend/game.js: solo “líneas puente” (hooks) sin refactor.
+
+Principios
+- Una sola página: detección de touch para mostrar/ocultar HUD. Nada de clones.
+- Resolución lógica fija 16:9 con “contain” (letterboxing) y mapeo de input/UI por escala.
+- Separar Input/UI/Render del núcleo; game.js queda intacto.
+
+Fase 1 — Detección, Canvas y Layout base
+- Detectar touch: matchMedia("(pointer: coarse)") o navigator.maxTouchPoints > 0.
+- Canvas escalable (contain, 16:9):
+  - BASE_W=1280, BASE_H=720; scale = min(viewportW/1280, viewportH/720).
+  - canvas.style.width/height = BASE * scale; canvas.width/height = round(BASE * scale * dpr).
+  - Centrar el área de juego; barras laterales/arriba-abajo según aspecto.
+- Mapeo de coordenadas físicas → lógicas (divide por scale y considera offset).
+- Safe areas: usar env(safe-area-inset-*) en HUD.
+
+Fase 2 — HUD táctil y normalización de entrada
+- Componentes:
+  - VirtualJoystick (izq): deadzone, radio, sensibilidad, "relative start" ([-1..1]).
+  - ActionButtons (der): disparo + hasta 3 skills; multitouch; feedback y cooldown.
+  - TouchHUD: compone joystick + botones.
+- InputController: unifica touch/mouse/teclado/gamepad y expone snapshot {moveX, moveY, fire, skills, ts}.
+- Listeners: usar touch-action: none en zonas de control; passive donde corresponda.
+- Toggle opcional en settings para forzar on/off del HUD táctil.
+
+Fase 3 — Puentes mínimos en backend/game.js + Rutas API
+- Agregar SOLO hooks seguros (sin mover lógica):
+  - applyInput(sessionId, payload)
+  - getFrameState(sessionId, viewport?)   // snapshot para HUD/render
+  - triggerSkill(sessionId, skillId)
+  - onResize?(w,h)                        // opcional
+- Rutas Next API:
+  - /api/session -> initializeSession (ya existe)
+  - /api/input   -> applyInput
+  - /api/state   -> getFrameState
+  - /api/skill   -> triggerSkill
+- Contratos livianos, idempotentes, validación mínima.
+
+Fase 4 — Worker del cliente (opcional, sin tocar game.js)
+- workers/client-game.worker: batching de inputs, smoothing, preprocesado de datos de render.
+- Canal postMessage:
+  - In:  {type: input|resize|settings}
+  - Out: {type: renderState|hudEvents}
+- Offload de tareas costosas sin alterar el núcleo del juego.
+
+Fase 5 — Render con OffscreenCanvas (fallback a main)
+- Si soportado: render en Worker (Chrome/Edge/Firefox) con OffscreenCanvas.
+- Safari iOS: fallback a render en main thread; Worker solo procesa datos.
+- Renderer con dos backends: Worker/Main.
+
+Fase 6 — Responsive hardening (Landing/Market)
+- Meta viewport correcta; tipografía fluida (clamp); grids con breakpoints (sm/md/lg).
+- Imágenes/iconos con aspect-ratio y sizes; evitar anchos fijos en px.
+- Controles/touch targets >= 44–48px; evitar scroll/zoom involuntario.
+- Filtros del Market en drawer en móvil; cards flexibles (2 col móvil, 3–4 tablet, 6+ desktop).
+
+Fase 7 — Compatibilidad, rendimiento y QA
+- Cross-browser: gestos iOS, audio unlock al primer toque, fullscreen con prefijos.
+- Performance: reducir draw calls, usar atlas/sprites; pools de objetos; pausar en visibilitychange.
+- Telemetría ligera (FPS, input lag) para iterar en móviles.
+- QA en Chrome Android, Safari iOS, Firefox, Edge; teléfonos y tablets; portrait/landscape; multitouch.
+
+Cambios permitidos en backend/game.js (estimado 4–12 líneas)
+- Exportar hooks:
+  - export async function applyInput(sessionId, payload) { /* puente */ }
+  - export async function getFrameState(sessionId, viewport) { /* snapshot */ }
+  - export async function triggerSkill(sessionId, skillId) { /* puente */ }
+  - export function onResize(w,h) { /* opcional */ }
+- Registrar instancia principal accesible (p.ej., window.CD = instance) o exponer handlers.
+- NO tocar update/render/IA/físicas; NO dividir archivos.
+
+Aceptación (MVP)
+- En móvil/tablet, HUD táctil aparece automáticamente; en desktop no.
+- Joystick y botones responden con latencia < 50–100 ms en gama media.
+- Juego renderiza consistente con contain 16:9 en cualquier resolución.
+- Landing y Market usables y ordenados en móviles (breakpoints aplicados).
+
+Futuro
+- Predicción cliente ligera y rollback opcional.
+- PWA (manifest + service worker) para "Add to Home Screen".
+- Ajustes automáticos de calidad según rendimiento del dispositivo.
+
