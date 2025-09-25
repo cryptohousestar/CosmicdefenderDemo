@@ -2,8 +2,8 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { isTouchPreferred } from "../compat/detect";
-import { InputController } from "@/input/InputController";
-import { TouchHUD } from "@/components/controls/TouchHUD";
+import { InputController } from "../input/InputController";
+import { TouchHUD } from "../components/controls/TouchHUD";
 
 interface Star {
   x: number;
