@@ -951,9 +951,11 @@ class CosmicDefender {
     this.selectedSkillIdx = null;
   }
 
-  init() {
-    // Inicializar monedas si no existen
-    if (!localStorage.getItem("coins")) {
+    init() {
+        this.resizeCanvas();
+        window.addEventListener('resize', () => this.resizeCanvas());
+
+        // Inicializar monedas si no existen
       localStorage.setItem("coins", "0");
     }
     this.listenersRegistered = false; // Nueva bandera para listeners
@@ -965,10 +967,24 @@ class CosmicDefender {
     // Check if we have integration data from URL parameters
     this.checkIntegrationData();
 
-    this.showMenu(); // Mostrar menú principal
-    this.gameLoop();
-  }
+            this.showMenu(); // Mostrar menú principal
+            this.gameLoop();
+        }
 
+        resizeCanvas() {
+            this.canvas.width = window.innerWidth;
+            this.canvas.height = window.innerHeight;
+
+            const baseWidth = 1200; // The game's design resolution
+            const baseHeight = 800;
+
+            // Calculate scale to fit the screen while maintaining aspect ratio (letterboxing)
+            this.scale = Math.min(this.canvas.width / baseWidth, this.canvas.height / baseHeight);
+
+            // Calculate offsets to center the scaled content
+            this.renderOffsetX = (this.canvas.width - (baseWidth * this.scale)) / 2;
+            this.renderOffsetY = (this.canvas.height - (baseHeight * this.scale)) / 2;
+        }
   // Check for integration data from URL parameters
   checkIntegrationData() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -4911,17 +4927,22 @@ class CosmicDefender {
     }, 2000);
   }
 
-  render() {
+    this.ctx.save();
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.translate(this.renderOffsetX, this.renderOffsetY);
+    this.ctx.scale(this.scale, this.scale);
+
+    // The original render content starts here, now scaled
     // Log cada 5 segundos para evitar spam
     const now = Date.now();
     if (!this.lastRenderLog || now - this.lastRenderLog > 5000) {
-      // LogManager.log('info', `=== RENDER CALLED === GameState: ${this.gameState}, Player: ${!!this.player}`);
-      this.lastRenderLog = now;
+        // LogManager.log('info', `=== RENDER CALLED === GameState: ${this.gameState}, Player: ${!!this.player}`);
+        this.lastRenderLog = now;
     }
 
-    // Clear canvas
-    this.ctx.fillStyle = "#000011";
-    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    // Clear virtual canvas
+    this.ctx.fillStyle = '#000011';
+    this.ctx.fillRect(0, 0, 1200, 800);
 
     // Debug: Log render state
     // LogManager.log('info', `Rendering - GameState: ${this.gameState}, Player: ${this.player ? 'exists' : 'null'}, Players: ${this.players ? this.players.length : 0}`);
@@ -4929,115 +4950,111 @@ class CosmicDefender {
     // Draw stars background (optimizado según configuración)
     this.drawStars();
 
-    if (this.gameState === "playing" && this.player) {
-      // LogManager.log('info', '=== DRAWING GAME ELEMENTS ===');
+    if (this.gameState === 'playing' && this.player) {
+        // LogManager.log('info', '=== DRAWING GAME ELEMENTS ===');
 
-      // Draw Earth in the background
-      this.drawEarth();
+        // Draw Earth in the background
+        this.drawEarth();
 
-      // Draw satellites (solo si está habilitado)
-      if (this.performanceSettings.enableSatellites) {
-        this.satellites.forEach((satellite) => this.drawSatellite(satellite));
-      }
-
-      // Draw planet portals
-      this.drawPlanetPortals();
-
-      // Debug: dibujar portal de prueba
-      // this.drawDebugPortals();
-
-      // Draw space stations (clan bases)
-      this.drawSpaceStations();
-
-      // Draw safe zone
-      this.drawSafeZone();
-
-      // Draw obstacles
-      this.obstacles.forEach((obstacle) => this.drawObstacle(obstacle));
-
-      // Draw enemies - DISABLED
-      // this.enemies.forEach(enemy => this.drawEnemy(enemy));
-
-      // Draw bullets
-      this.bullets.forEach((bullet) => this.drawBullet(bullet));
-      this.enemyBullets.forEach((bullet) => this.drawEnemyBullet(bullet));
-
-      // Draw power-ups
-      this.powerUps.forEach((powerUp) => this.drawPowerUp(powerUp));
-
-      // Draw coins
-      this.coinObjects.forEach((coin) => this.drawCoin(coin));
-
-      // Draw particles (solo si está habilitado)
-      if (this.performanceSettings.enableParticles) {
-        this.particles.forEach((particle) => this.drawParticle(particle));
-      }
-
-      // Draw damage numbers (solo si está habilitado)
-      if (this.performanceSettings.enableDamageNumbers) {
-        this.damageNumbers.forEach((number) => this.drawDamageNumber(number));
-      }
-
-      // Draw all players (bots)
-      // LogManager.log('info', `Drawing ${this.players.length} players/bots`);
-      this.players.forEach((player, index) => {
-        if (player.health > 0 && !player.isHuman) {
-          // Only draw bots, not the player
-          const screenPos = this.worldToScreen(player.x, player.y);
-          const clanColor = this.clans[player.clan].color;
-          const isAlly = player.clan === this.playerClan;
-
-          this.drawTriangularShip(player, clanColor, "unused");
-
-          // Draw ally indicator
-          if (isAlly) {
-            this.drawAllyIndicator(player);
-          }
-
-          // Draw bot name and title
-          this.ctx.fillStyle = "#ffffff";
-          this.ctx.font = "12px Arial";
-          this.ctx.textAlign = "center";
-          let displayName = player.name;
-
-          if (player.isBoss) {
-            displayName += " [JEFE]";
-            this.ctx.fillStyle = "#ff00ff"; // Magenta for Boss
-          } else if (player.isElite) {
-            displayName += " [ELITE]";
-            this.ctx.fillStyle = "#FF6B35"; // Orange for Elite
-          }
-          this.ctx.fillText(
-            displayName,
-            screenPos.x + player.width / 2,
-            screenPos.y - 10,
-          );
+                    // Draw satellites (solo si está habilitado)
+        if (this.performanceSettings.enableSatellites) {
+            this.satellites.forEach(satellite => this.drawSatellite(satellite));
         }
-      });
 
-      // Draw player separately - ensure it's always drawn
-      if (this.player && this.player.health > 0) {
-        // LogManager.log('info', '=== DRAWING PLAYER ===');
-        this.drawPlayer();
-      } else {
-        // LogManager.log('warn', `Player not drawn - exists: ${!!this.player}, health: ${this.player?.health}`);
-      }
+        // Draw planet portals
+        this.drawPlanetPortals();
 
-      // Draw minimap (solo si está habilitado)
-      if (this.performanceSettings.enableMinimap) {
+        // Debug: dibujar portal de prueba
+        // this.drawDebugPortals();
+
+        // Draw space stations (clan bases)
+        this.drawSpaceStations();
+
+        // Draw safe zone
+        this.drawSafeZone();
+
+        // Draw obstacles
+        this.obstacles.forEach(obstacle => this.drawObstacle(obstacle));
+
+        // Draw enemies - DISABLED
+        // this.enemies.forEach(enemy => this.drawEnemy(enemy));
+
+        // Draw bullets
+        this.bullets.forEach(bullet => this.drawBullet(bullet));
+        this.enemyBullets.forEach(bullet => this.drawEnemyBullet(bullet));
+
+        // Draw power-ups
+        this.powerUps.forEach(powerUp => this.drawPowerUp(powerUp));
+
+        // Draw coins
+        this.coinObjects.forEach(coin => this.drawCoin(coin));
+
+        // Draw particles (solo si está habilitado)
+        if (this.performanceSettings.enableParticles) {
+        this.particles.forEach(particle => this.drawParticle(particle));
+        }
+
+        // Draw damage numbers (solo si está habilitado)
+        if (this.performanceSettings.enableDamageNumbers) {
+        this.damageNumbers.forEach(number => this.drawDamageNumber(number));
+        }
+
+        // Draw all players (bots)
+        // LogManager.log('info', `Drawing ${this.players.length} players/bots`);
+        this.players.forEach((player, index) => {
+            if (player.health > 0 && !player.isHuman) { // Only draw bots, not the player
+                const screenPos = this.worldToScreen(player.x, player.y);
+                const clanColor = this.clans[player.clan].color;
+                const isAlly = player.clan === this.playerClan;
+
+                this.drawTriangularShip(player, clanColor, 'unused');
+
+                // Draw ally indicator
+                if (isAlly) {
+                    this.drawAllyIndicator(player);
+                }
+
+                // Draw bot name and title
+                this.ctx.fillStyle = '#ffffff';
+                this.ctx.font = '12px Arial';
+                this.ctx.textAlign = 'center';
+                let displayName = player.name;
+
+                if (player.isBoss) {
+                    displayName += ' [JEFE]';
+                    this.ctx.fillStyle = '#ff00ff'; // Magenta for Boss
+                } else if (player.isElite) {
+                    displayName += ' [ELITE]';
+                    this.ctx.fillStyle = '#FF6B35'; // Orange for Elite
+                }
+                this.ctx.fillText(displayName, screenPos.x + player.width / 2, screenPos.y - 10);
+            }
+        });
+
+        // Draw player separately - ensure it's always drawn
+        if (this.player && this.player.health > 0) {
+            // LogManager.log('info', '=== DRAWING PLAYER ===');
+            this.drawPlayer();
+        } else {
+            // LogManager.log('warn', `Player not drawn - exists: ${!!this.player}, health: ${this.player?.health}`);
+        }
+
+        // Draw minimap (solo si está habilitado)
+        if (this.performanceSettings.enableMinimap) {
         this.drawMinimap();
-      }
+        }
 
-      // Zona segura neutral
-      this.drawCentralSafeZone();
+        // Zona segura neutral
+        this.drawCentralSafeZone();
 
-      // Dibuja una estación espacial simple estilo pixel art en el centro
-      this.drawCentralStation();
+        // Dibuja una estación espacial simple estilo pixel art en el centro
+        this.drawCentralStation();
     }
 
     // Draw damage numbers
-    this.damageNumbers.forEach((number) => this.drawDamageNumber(number));
-  }
+    this.damageNumbers.forEach(number => this.drawDamageNumber(number));
+
+    this.ctx.restore();
 
   drawSafeZone() {
     // Draw all clan safe zones

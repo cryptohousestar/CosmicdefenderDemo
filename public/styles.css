@@ -4,7 +4,8 @@
     box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
     margin: 0;
     padding: 0;
     width: 100%;
@@ -13,7 +14,7 @@ html, body {
 }
 
 body {
-    font-family: 'Arial', sans-serif;
+    font-family: "Arial", sans-serif;
     background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
     color: #ffffff;
     display: flex;
@@ -88,12 +89,6 @@ body {
     color: #ffffff;
 }
 
-
-
-
-
-
-
 .item {
     background: rgba(255, 107, 53, 0.1);
     border: 1px solid #ff6b35;
@@ -150,7 +145,8 @@ body {
     color: #cccccc;
 }
 
-.game-menu, .ship-selector {
+.game-menu,
+.ship-selector {
     position: fixed;
     top: 0;
     left: 0;
@@ -165,7 +161,8 @@ body {
     padding: 0;
 }
 
-.menu-content, .selector-content {
+.menu-content,
+.selector-content {
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
     border: 2px solid #00ffff;
     border-radius: 20px;
@@ -354,13 +351,18 @@ body {
 }
 
 .clan-option::before {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+    background: linear-gradient(
+        45deg,
+        transparent 30%,
+        rgba(255, 255, 255, 0.1) 50%,
+        transparent 70%
+    );
     transform: translateX(-100%);
     transition: transform 0.6s;
 }
@@ -419,9 +421,15 @@ body {
 
 /* Animaciones */
 @keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-    100% { transform: scale(1); }
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
 }
 
 .pulse {
@@ -429,9 +437,15 @@ body {
 }
 
 @keyframes glow {
-    0% { box-shadow: 0 0 5px rgba(0, 255, 255, 0.5); }
-    50% { box-shadow: 0 0 20px rgba(0, 255, 255, 0.8); }
-    100% { box-shadow: 0 0 5px rgba(0, 255, 255, 0.5); }
+    0% {
+        box-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(0, 255, 255, 0.8);
+    }
+    100% {
+        box-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
+    }
 }
 
 .glow {
@@ -439,14 +453,27 @@ body {
 }
 
 @keyframes achievementPop {
-    0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
-    50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
-    100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    0% {
+        transform: translate(-50%, -50%) scale(0.5);
+        opacity: 0;
+    }
+    50% {
+        transform: translate(-50%, -50%) scale(1.1);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+    }
 }
 
 @keyframes skillCooldown {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 .skill-cooldown {
@@ -473,7 +500,8 @@ body {
     margin: 20px 0;
 }
 
-.available-skills, .equipped-skills {
+.available-skills,
+.equipped-skills {
     flex: 1;
 }
 
@@ -573,7 +601,7 @@ body {
     color: #888;
     font-style: italic;
     margin-top: 20px;
-} 
+}
 
 /* Skills Tree Panel */
 .skills-tree-panel {
@@ -658,7 +686,7 @@ body {
 }
 
 .skill-tree-item.unlocked {
-    border-color: #4CAF50;
+    border-color: #4caf50;
     background: rgba(76, 175, 80, 0.1);
 }
 
@@ -706,7 +734,7 @@ body {
 }
 
 .skill-tree-item .skill-status .equipped {
-    color: #4CAF50;
+    color: #4caf50;
 }
 
 .skill-tree-item .skill-status .available {
@@ -939,13 +967,18 @@ body {
 }
 
 .bando-option::before {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.2), transparent);
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(0, 255, 255, 0.2),
+        transparent
+    );
     transition: left 0.5s;
 }
 
@@ -1017,9 +1050,64 @@ body {
 .bando-bonus-description {
     color: #ccc;
     font-size: 11px;
-} 
+}
 
-.widget, .widget-panel, .widget-control, .widget-draggable, .widget-static {
+.widget,
+.widget-panel,
+.widget-control,
+.widget-draggable,
+.widget-static {
     border: 2px solid #00eaff !important;
     box-shadow: 0 0 10px #00eaff44 !important;
-} 
+}
+
+/* --- Responsive Styles for Mobile --- */
+@media (max-width: 768px) {
+    /* Make menus and selectors take up more screen width */
+    .menu-content,
+    .selector-content {
+        width: 95%;
+        padding: 20px;
+        max-height: 95vh;
+    }
+
+    .menu-content h1 {
+        font-size: 28px;
+    }
+
+    /* Stack grids to a single column */
+    .ships-grid,
+    .clans-grid,
+    .bandos-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* Improve readability of player stats */
+    .player-stats {
+        flex-wrap: wrap; /* Allow stats to wrap onto the next line */
+        gap: 10px;
+        padding: 10px;
+    }
+
+    .stat {
+        gap: 2px;
+    }
+
+    .stat-label {
+        font-size: 10px;
+    }
+
+    .stat-value {
+        font-size: 14px;
+    }
+
+    /* Increase button and text sizes for touch */
+    .menu-button {
+        padding: 15px 25px;
+        font-size: 16px;
+    }
+
+    .instructions ul {
+        font-size: 13px;
+    }
+}
