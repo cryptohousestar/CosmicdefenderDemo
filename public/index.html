@@ -267,7 +267,7 @@ class TouchControls {
 
     // --- Touch Event Handlers ---
     handleTouchStart(event) {
-        event.preventDefault();
+        let isJoystickTouch = false;
         for (const touch of event.changedTouches) {
             const moveRect = this.moveJoystick.container.getBoundingClientRect();
             if (touch.clientX >= moveRect.left && touch.clientX <= moveRect.right &&
@@ -277,6 +277,7 @@ class TouchControls {
                 const rect = this.moveJoystick.container.getBoundingClientRect();
                 this.moveJoystick.center.x = rect.left + rect.width / 2;
                 this.moveJoystick.center.y = rect.top + rect.height / 2;
+                isJoystickTouch = true;
             }
 
             const aimRect = this.aimJoystick.container.getBoundingClientRect();
@@ -288,24 +289,39 @@ class TouchControls {
                 this.aimJoystick.center.x = rect.left + rect.width / 2;
                 this.aimJoystick.center.y = rect.top + rect.height / 2;
                 this.game.mouse.clicked = true;
+                isJoystickTouch = true;
             }
+        }
+        if (isJoystickTouch) {
+            event.preventDefault();
         }
     }
 
     handleTouchMove(event) {
-        event.preventDefault();
+        let isJoystickMove = false;
         for (const touch of event.changedTouches) {
-            if (this.moveJoystick.active && touch.identifier === this.moveJoystick.touchId) {
-                this.updateJoystick(this.moveJoystick, touch, this.updateGameKeys.bind(this));
+            if ((this.moveJoystick.active && touch.identifier === this.moveJoystick.touchId) ||
+                (this.aimJoystick.active && touch.identifier === this.aimJoystick.touchId)) {
+                isJoystickMove = true;
+                break;
             }
-            if (this.aimJoystick.active && touch.identifier === this.aimJoystick.touchId) {
-                this.updateJoystick(this.aimJoystick, touch, this.updateAim.bind(this));
+        }
+
+        if (isJoystickMove) {
+            event.preventDefault();
+            for (const touch of event.changedTouches) {
+                if (this.moveJoystick.active && touch.identifier === this.moveJoystick.touchId) {
+                    this.updateJoystick(this.moveJoystick, touch, this.updateGameKeys.bind(this));
+                }
+                if (this.aimJoystick.active && touch.identifier === this.aimJoystick.touchId) {
+                    this.updateJoystick(this.aimJoystick, touch, this.updateAim.bind(this));
+                }
             }
         }
     }
 
     handleTouchEnd(event) {
-        event.preventDefault();
+        // We don't prevent default here to allow clicks to register
         for (const touch of event.changedTouches) {
             if (this.moveJoystick.active && touch.identifier === this.moveJoystick.touchId) {
                 this.moveJoystick.active = false;
