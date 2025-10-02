@@ -1,0 +1,40 @@
+### **ROADMAP MÓVIL - ARQUITECTURA FINAL Y ESTADO ACTUAL**
+
+**Filosofía:** No modificar la versión de PC existente. Se ha creado una versión móvil paralela y modular para garantizar que el juego en producción (`www.crytominingquest.space`) no se vea afectado.
+
+**Arquitectura Implementada:**
+1.  **Bifurcación de Archivos:** Se creó una rama paralela de archivos (`juego-movil.html`, `mobile.css`, etc.) que cargan el `game.js` original pero le añaden funcionalidades extra.
+2.  **Carga Modular:** Se creó un orquestador (`modules/mobile-init.js`) que es el único punto de entrada para la lógica móvil. Este script se encarga de cargar otros módulos de forma controlada.
+3.  **Componentes Desacoplados:** La lógica de los controles se separó en dos módulos con responsabilidad única:
+    *   `modules/controles-tactiles.js`: Dibuja los joysticks y emite eventos (`mobile-input`) con los datos del movimiento, sin conocer al juego.
+    *   `modules/input-bridge.js`: Escucha los eventos de `mobile-input` y actúa como "puente", traduciendo los datos del evento en acciones que el motor del juego (`game.js`) entiende.
+4.  **PWA "Lite":** Se implementó la funcionalidad de "Añadir a pantalla de inicio" mediante un `manifest-movil.json` y un Service Worker (`sw-movil.js`) vacío que no guarda datos offline, cumpliendo el requisito de que el juego siempre necesite conexión al servidor.
+
+---
+
+### **ESTADO ACTUAL Y PROBLEMA SIN RESOLVER (TAREA PENDIENTE)**
+
+**Problema Principal: Los joysticks no son visibles en la pantalla.**
+
+Aunque la consola del navegador no muestra errores de JavaScript y los logs confirman que los scripts de los controles se cargan y ejecutan, los joysticks no aparecen en la pantalla. Esto sugiere que el problema no es de lógica, sino de visualización (CSS o DOM).
+
+**Hipótesis:**
+La causa más probable es un **conflicto de CSS**. Es posible que una regla de estilo en `styles.css` o una propiedad del canvas del juego esté ocultando los `div` de los joysticks, por ejemplo, dándoles una opacidad de 0, un tamaño de 0, o un `z-index` (profundidad) inferior al del fondo del juego.
+
+---
+
+### **PRÓXIMO PASO INMEDIATO (ACCIÓN PENDIENTE)**
+
+La próxima acción a realizar es forzar la visibilidad de los joysticks para descartar un problema de superposición de capas.
+
+1.  **Acción:** Añadir las siguientes reglas de CSS "importantes" al archivo `public/mobile.css`.
+
+2.  **Código a Añadir:**
+    ```css
+    #move-joystick-container, #aim-joystick-container {
+        z-index: 99999 !important;      /* Forzar a estar al frente de todo */
+        pointer-events: auto !important; /* Forzar a que sea interactivo */
+    }
+    ```
+
+3.  **Verificación:** Tras añadir este código, se debe probar la página `/juego-movil.html` en un simulador móvil. Si los joysticks aparecen, el problema de visibilidad estará resuelto y se podrá continuar con el ajuste fino de la interfaz. Si no aparecen, el siguiente paso sería inspeccionar el DOM en vivo (Herramientas de Desarrollador -> Elements) para ver si los divs se están creando y qué estilos están aplicando sobre ellos.

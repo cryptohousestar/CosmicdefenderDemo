@@ -1,0 +1,23 @@
+{
+  "name": "Cosmic Defender Mobile",
+  "short_name": "Cosmic Defender",
+  "start_url": "/juego-movil.html",
+  "display": "standalone",
+  "background_color": "#000011",
+  "theme_color": "#000011",
+  "orientation": "landscape",
+  "icons": [
+    {
+      "src": "/recursos_graficos/rostro de robot amigable, expresión sonriente, ojos grandes y brillantes, diseño.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/recursos_graficos/rostro de robot amigable, expresión sonriente, ojos grandes y brillantes, diseño.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

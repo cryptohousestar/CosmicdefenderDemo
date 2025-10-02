@@ -1,0 +1,39 @@
+/* Importar los estilos base del mercado de PC */
+@import url('market.css');
+
+/* Media Query para pantallas de celular (ancho menor a 768px) */
+@media (max-width: 768px) {
+    .market-main {
+        flex-direction: column; /* Apilar los paneles verticalmente */
+    }
+
+    .catalog-panel, .inventory-panel {
+        width: 100%; /* Hacer que ambos paneles ocupen todo el ancho */
+    }
+
+    .catalog-grid, .inventory-grid {
+        /* 3 columnas en móvil para que los ítems sean más grandes */
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+    }
+
+    .equip-slot {
+        padding: 15px; /* Más espacio para tocar */
+    }
+
+    .pixel-title {
+        font-size: 2rem; /* Título más pequeño en móvil */
+    }
+
+    .market-container {
+        padding: 10px;
+    }
+}
+
+/* Estilos para modo vertical (pantalla más alta que ancha) */
+@media (max-width: 480px) {
+    .catalog-grid, .inventory-grid {
+        /* 2 columnas en celulares muy pequeños */
+        grid-template-columns: repeat(2, 1fr);
+    }
+}

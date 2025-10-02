@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cosmic Defender - Sprite Visualizer</title>
+    <style>
+        body {
+            background: radial-gradient(circle at 50% 50%, #1a1a2e 0%, #0a0a0f 100%);
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #FFD700;
+            text-shadow: 0 0 30px #FFD700, 0 0 60px #FFD700;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            animation: titleGlow 3s ease-in-out infinite alternate;
+        }
+        
+        @keyframes titleGlow {
+            from { text-shadow: 0 0 30px #FFD700, 0 0 60px #FFD700; }
+            to { text-shadow: 0 0 50px #FFD700, 0 0 100px #FFD700, 0 0 150px #FFD700; }
+        }
+        
+        .sprite-section {
+            margin-bottom: 60px;
+            padding: 30px;
+            border: 3px solid transparent;
+            border-radius: 20px;
+            background: linear-gradient(45deg, rgba(255, 215, 0, 0.1), rgba(255, 215, 0, 0.05));
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .sprite-section::before {
+            content: '';
+            position: absolute;
+            top: -2px; left: -2px; right: -2px; bottom: -2px;
+            background: linear-gradient(45deg, #FFD700, #DAA520, #B8860B, #FFD700);
+            border-radius: 20px;
+            z-index: -1;
+            animation: borderGlow 4s linear infinite;
+        }
+        
+        @keyframes borderGlow {
+            0%, 100% { background: linear-gradient(45deg, #FFD700, #DAA520, #B8860B, #FFD700); }
+            50% { background: linear-gradient(45deg, #FFE082, #FFD700, #DAA520, #FFE082); }
+        }
+        
+        .sprite-title {
+            font-size: 28px;
+            color: #FFD700;
+            margin-bottom: 15px;
+            text-align: center;
+            text-shadow: 0 0 20px #FFD700;
+        }
+        
+        .sprite-description {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #E6E6FA;
+            font-style: italic;
+            font-size: 16px;
+        }
+        
+        .sprite-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 50px;
+            flex-wrap: wrap;
+        }
+        
+        .sprite-svg {
+            filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.5));
+            transition: all 0.3s ease;
+        }
+        
+        .sprite-svg:hover {
+            filter: drop-shadow(0 0 40px rgba(255, 215, 0, 0.8));
+            transform: scale(1.05);
+        }
+        
+        .sprite-info {
+            max-width: 350px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid #FFD700;
+        }
+        
+        .stats {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 15px;
+            border: 1px solid #DAA520;
+        }
+        
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+        }
+        
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+        
+        .scale-controls {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .scale-btn {
+            background: linear-gradient(45deg, #FFD700, #DAA520);
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            margin: 0 8px;
+            cursor: pointer;
+            border-radius: 25px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+        }
+        
+        .scale-btn:hover {
+            background: linear-gradient(45deg, #FFE082, #FFD700);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 215, 0, 0.5);
+        }
+        
+        /* Animaciones SVG */
+        .energy-pulse {
+            animation: energyPulse 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes energyPulse {
+            from { opacity: 0.7; }
+            to { opacity: 1; }
+        }
+        
+        .rotate-slow {
+            animation: rotateSlow 8s linear infinite;
+            transform-origin: center;
+        }
+        
+        @keyframes rotateSlow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .glow-effect {
+            filter: url(#glow);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 COSMIC DEFENDER - NFT COLLECTION 🚀</h1>
+        
+        <div class="scale-controls">
+            <button class="scale-btn" onclick="changeScale(0.8)">Pequeño</button>
+            <button class="scale-btn" onclick="changeScale(1.0)">Normal</button>
+            <button class="scale-btn" onclick="changeScale(1.2)">Grande</button>
+            <button class="scale-btn" onclick="changeScale(1.5)">Épico</button>
+        </div>
+
+        <!-- Genesis Cosmic Emperor -->
+        <div class="sprite-section">
+            <div class="sprite-title">👑 Genesis Cosmic Emperor - NAVE ÚNICA</div>
+            <div class="sprite-description">"The one and only Emperor of the Cosmos - Forged in the heart of dying stars"</div>
+            <div class="sprite-container">
+                <svg class="sprite-svg" id="genesis-ship" width="300" height="300" viewBox="0 0 300 300">
+                    <!-- Definiciones de gradientes y efectos -->
+                    <defs>
+                        <!-- Gradiente dorado metálico -->
+                        <radialGradient id="goldMetal" cx="0.3" cy="0.3" r="0.8">
+                            <stop offset="0%" stop-color="#FFF9C4"/>
+                            <stop offset="20%" stop-color="#FFD700"/>
+                            <stop offset="60%" stop-color="#DAA520"/>
+                            <stop offset="85%" stop-color="#B8860B"/>
+                            <stop offset="100%" stop-color="#8B7355"/>
+                        </radialGradient>
+                        
+                        <!-- Gradiente cromado -->
+                        <radialGradient id="chromeMetal" cx="0.3" cy="0.3" r="0.8">
+                            <stop offset="0%" stop-color="#FFFFFF"/>
+                            <stop offset="30%" stop-color="#E8E8E8"/>
+                            <stop offset="70%" stop-color="#C0C0C0"/>
+                            <stop offset="100%" stop-color="#A0A0A0"/>
+                        </radialGradient>
+                        
+                        <!-- Gradiente de energía -->
+                        <radialGradient id="energyCore" cx="0.5" cy="0.5" r="0.5">
+                            <stop offset="0%" stop-color="#FFF9C4"/>
+                            <stop offset="40%" stop-color="#FFE082"/>
+                            <stop offset="80%" stop-color="#FFB300"/>
+                            <stop offset="100%" stop-color="#FF6F00"/>
+                        </radialGradient>
+                        
+                        <!-- Efecto de brillo -->
+                        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                            <feMerge> 
+                                <feMergeNode in="coloredBlur"/>
+                                <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                        </filter>
+                        
+                        <!-- Patrón de energía -->
+                        <pattern id="energyPattern" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
+                            <circle cx="5" cy="5" r="1" fill="#FFE082" opacity="0.3"/>
+                        </pattern>
+                    </defs>
+                    
+                    <!-- Campo de energía exterior -->
+                    <circle cx="150" cy="150" r="140" fill="url(#energyPattern)" opacity="0.4" class="energy-pulse"/>
+                    
+                    <!-- Cuerpo principal de la nave -->
+                    <path d="M 150 30 Q 220 100 240 240 L 60 240 Q 80 100 150 30 Z" 
+                          fill="url(#goldMetal)" 
+                          stroke="url(#chromeMetal)" 
+                          stroke-width="2" 
+                          class="glow-effect"/>
+                    
+                    <!-- Alas laterales -->
+                    <path d="M 100 120 Q 50 150 70 200 L 90 195 Q 110 160 100 120 Z" 
+                          fill="url(#goldMetal)" 
+                          stroke="url(#chromeMetal)" 
+                          stroke-width="1.5"/>
+                    <path d="M 200 120 Q 250 150 230 200 L 210 195 Q 190 160 200 120 Z" 
+                          fill="url(#goldMetal)" 
+                          stroke="url(#chromeMetal)" 
+                          stroke-width="1.5"/>
+                    
+                    <!-- Detalles tecnológicos -->
+                    <g class="rotate-slow">
+                        <circle cx="150" cy="120" r="3" fill="#FFE082"/>
+                        <circle cx="130" cy="140" r="2" fill="#FFD700"/>
+                        <circle cx="170" cy="140" r="2" fill="#FFD700"/>
+                        <circle cx="150" cy="160" r="3" fill="#FFE082"/>
+                    </g>
+                    
+                    <!-- Core de energía central -->
+                    <circle cx="150" cy="150" r="25" fill="url(#energyCore)" class="energy-pulse glow-effect"/>
+                    <circle cx="150" cy="150" r="30" fill="none" stroke="#FFE082" stroke-width="2" opacity="0.8"/>
+                    <circle cx="150" cy="150" r="35" fill="none" stroke="#FFD700" stroke-width="1" opacity="0.6"/>
+                    
+                    <!-- Detalles de energía radiantes -->
+                    <g class="energy-pulse">
+                        <line x1="150" y1="110" x2="150" y2="90" stroke="#FFE082" stroke-width="3"/>
+                        <line x1="190" y1="150" x2="210" y2="150" stroke="#FFE082" stroke-width="3"/>
+                        <line x1="150" y1="190" x2="150" y2="210" stroke="#FFE082" stroke-width="3"/>
+                        <line x1="110" y1="150" x2="90" y2="150" stroke="#FFE082" stroke-width="3"/>
+                        <line x1="175" y1="125" x2="190" y2="110" stroke="#FFD700" stroke-width="2"/>
+                        <line x1="175" y1="175" x2="190" y2="190" stroke="#FFD700" stroke-width="2"/>
+                        <line x1="125" y1="175" x2="110" y2="190" stroke="#FFD700" stroke-width="2"/>
+                        <line x1="125" y1="125" x2="110" y2="110" stroke="#FFD700" stroke-width="2"/>
+                    </g>
+                </svg>
+                
+                <div class="sprite-info">
+                    <div class="stats">
+                        <div class="stat-item"><span>HP:</span><span style="color: #FFD700;">250 (MAX)</span></div>
+                        <div class="stat-item"><span>Speed:</span><span style="color: #FFD700;">10 (MAX)</span></div>
+                        <div class="stat-item"><span>Damage:</span><span style="color: #FFD700;">20 (MAX)</span></div>
+                        <div class="stat-item"><span>Slots:</span><span style="color: #FFE082;">3/3/3</span></div>
+                        <div class="stat-item"><span>Habilidad:</span><span style="color: #FF6F00;">God Mode</span></div>
+                        <div class="stat-item"><span>Rareza:</span><span style="color: #FFD700; font-weight: bold;">UNIQUE</span></div>
+                        <div class="stat-item"><span>Valor:</span><span style="color: #FFD700;">5,000+ MATIC</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quantum Vaporizer Omega -->
+        <div class="sprite-section">
+            <div class="sprite-title">⚡ Quantum Vaporizer Omega - ARMA ÚNICA</div>
+            <div class="sprite-description">"Vaporizes matter at the quantum level - No armor can withstand its power"</div>
+            <div class="sprite-container">
+                <svg class="sprite-svg" id="quantum-weapon" width="400" height="200" viewBox="0 0 400 200">
+                    <defs>
+                        <!-- Gradiente de plasma -->
+                        <linearGradient id="plasmaGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stop-color="#8B7355"/>
+                            <stop offset="30%" stop-color="#DAA520"/>
+                            <stop offset="70%" stop-color="#FFD700"/>
+                            <stop offset="100%" stop-color="#FFF9C4"/>
+                        </linearGradient>
+                        
+                        <!-- Efecto de rayo -->
+                        <linearGradient id="laserBeam" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stop-color="transparent"/>
+                            <stop offset="80%" stop-color="#FFE082"/>
+                            <stop offset="100%" stop-color="#FFF9C4"/>
+                        </linearGradient>
+                    </defs>
+                    
+                    <!-- Campo de energía -->
+                    <ellipse cx="200" cy="100" rx="180" ry="50" fill="url(#energyPattern)" opacity="0.3" class="energy-pulse"/>
+                    
+                    <!-- Cuerpo principal del arma -->
+                    <polygon points="40,70 360,85 380,100 360,115 40,130" 
+                             fill="url(#plasmaGrad)" 
+                             stroke="url(#chromeMetal)" 
+                             stroke-width="2" 
+                             class="glow-effect"/>
+                    
+                    <!-- Núcleos de energía -->
+                    <circle cx="100" cy="100" r="15" fill="url(#energyCore)" class="energy-pulse"/>
+                    <circle cx="200" cy="100" r="15" fill="url(#energyCore)" class="energy-pulse"/>
+                    <circle cx="300" cy="100" r="15" fill="url(#energyCore)" class="energy-pulse"/>
+                    
+                    <!-- Anillos de energía -->
+                    <circle cx="100" cy="100" r="20" fill="none" stroke="#FFE082" stroke-width="1" opacity="0.8"/>
+                    <circle cx="200" cy="100" r="20" fill="none" stroke="#FFE082" stroke-width="1" opacity="0.8"/>
+                    <circle cx="300" cy="100" r="20" fill="none" stroke="#FFE082" stroke-width="1" opacity="0.8"/>
+                    
+                    <!-- Punta del láser -->
+                    <polygon points="360,85 390,100 360,115" fill="#FFF9C4" class="glow-effect"/>
+                    
+                    <!-- Rayo de energía -->
+                    <rect x="370" y="97" width="30" height="6" fill="url(#laserBeam)" class="energy-pulse"/>
+                    
+                    <!-- Detalles tecnológicos -->
+                    <g class="energy-pulse">
+                        <line x1="80" y1="70" x2="80" y2="130" stroke="#FFD700" stroke-width="1"/>
+                        <line x1="140" y1="70" x2="140" y2="130" stroke="#FFD700" stroke-width="1"/>
+                        <line x1="180" y1="70" x2="180" y2="130" stroke="#FFD700" stroke-width="1"/>
+                        <line x1="220" y1="70" x2="220" y2="130" stroke="#FFD700" stroke-width="1"/>
+                        <line x1="260" y1="70" x2="260" y2="130" stroke="#FFD700" stroke-width="1"/>
+                        <line x1="320" y1="70" x2="320" y2="130" stroke="#FFD700" stroke-width="1"/>
+                    </g>
+                </svg>
+                
+                <div class="sprite-info">
+                    <div class="stats">
+                        <div class="stat-item"><span>Damage:</span><span style="color: #FFD700;">50 (MAX)</span></div>
+                        <div class="stat-item"><span>Fire Rate:</span><span style="color: #FFD700;">0.1 (ULTRA)</span></div>
+                        <div class="stat-item"><span>Range:</span><span style="color: #FFE082;">Infinito</span></div>
+                        <div class="stat-item"><span>Efecto:</span><span style="color: #FF6F00;">Vaporización</span></div>
+                        <div class="stat-item"><span>Rareza:</span><span style="color: #FFD700; font-weight: bold;">UNIQUE</span></div>
+                        <div class="stat-item"><span>Valor:</span><span style="color: #FFD700;">8,000+ MATIC</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Neutron Barrier Prime -->
+        <div class="sprite-section">
+            <div class="sprite-title">🛡️ Neutron Barrier Prime - ESCUDO ÚNICO</div>
+            <div class="sprite-description">"Impenetrable defense forged from collapsed neutron stars"</div>
+            <div class="sprite-container">
+                <svg class="sprite-svg" id="neutron-shield" width="300" height="300" viewBox="0 0 300 300">
+                    <defs>
+                        <!-- Gradiente hexagonal -->
+                        <pattern id="hexPattern" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+                            <polygon points="10,2 18,7 18,13 10,18 2,13 2,7" 
+                                     fill="none" 
+                                     stroke="#FFD700" 
+                                     stroke-width="0.5" 
+                                     opacity="0.4"/>
+                        </pattern>
+                    </defs>
+                    
+                    <!-- Campo de fuerza exterior -->
+                    <circle cx="150" cy="150" r="135" fill="url(#energyPattern)" opacity="0.2" class="energy-pulse"/>
+                    
+                    <!-- Escudo principal -->
+                    <circle cx="150" cy="150" r="120" 
+                            fill="url(#goldMetal)" 
+                            stroke="url(#chromeMetal)" 
+                            stroke-width="3" 
+                            class="glow-effect"/>
+                    
+                    <!-- Patrón hexagonal -->
+                    <circle cx="150" cy="150" r="115" fill="url(#hexPattern)"/>
+                    
+                    <!-- Anillos concéntricos -->
+                    <circle cx="150" cy="150" r="24" fill="none" stroke="#FFE082" stroke-width="1" opacity="0.8"/>
+                    <circle cx="150" cy="150" r="48" fill="none" stroke="#FFD700" stroke-width="1" opacity="0.7"/>
+                    <circle cx="150" cy="150" r="72" fill="none" stroke="#DAA520" stroke-width="1" opacity="0.6"/>
+                    <circle cx="150" cy="150" r="96" fill="none" stroke="#B8860B" stroke-width="1" opacity="0.5"/>
+                    
+                    <!-- Líneas hexagonales -->
+                    <g class="energy-pulse">
+                        <line x1="150" y1="30" x2="150" y2="270" stroke="#FFE082" stroke-width="1"/>
+                        <line x1="254" y1="90" x2="46" y2="210" stroke="#FFE082" stroke-width="1"/>
+                        <line x1="254" y1="210" x2="46" y2="90" stroke="#FFE082" stroke-width="1"/>
+                    </g>
+                    
+                    <!-- Core central -->
+                    <circle cx="150" cy="150" r="40" fill="url(#energyCore)" class="energy-pulse glow-effect"/>
+                    <circle cx="150" cy="150" r="20" fill="#FFF9C4" opacity="0.8"/>
+                    
+                    <!-- Detalles de energía orbital -->
+                    <g class="rotate-slow">
+                        <circle cx="150" cy="110" r="4" fill="#FFE082"/>
+                        <circle cx="190" cy="150" r="4" fill="#FFE082"/>
+                        <circle cx="150" cy="190" r="4" fill="#FFE082"/>
+                        <circle cx="110" cy="150" r="4" fill="#FFE082"/>
+                        <circle cx="177" cy="123" r="3" fill="#FFD700"/>
+                        <circle cx="177" cy="177" r="3" fill="#FFD700"/>
+                        <circle cx="123" cy="177" r="3" fill="#FFD700"/>
+                        <circle cx="123" cy="123" r="3" fill="#FFD700"/>
+                    </g>
+                </svg>
+                
+                <div class="sprite-info">
+                    <div class="stats">
+                        <div class="stat-item"><span>Defense:</span><span style="color: #FFD700;">100 (MAX)</span></div>
+                        <div class="stat-item"><span>Regeneration:</span><span style="color: #FFE082;">10 HP/seg</span></div>
+                        <div class="stat-item"><span>Efecto:</span><span style="color: #FF6F00;">Refleja proyectiles</span></div>
+                        <div class="stat-item"><span>Duración:</span><span style="color: #FFD700;">Infinita</span></div>
+                        <div class="stat-item"><span>Rareza:</span><span style="color: #FFD700; font-weight: bold;">UNIQUE</span></div>
+                        <div class="stat-item"><span>Valor:</span><span style="color: #FFD700;">6,000+ MATIC</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Void Engine Alpha -->
+        <div class="sprite-section">
+            <div class="sprite-title">🚀 Void Engine Alpha - MOTOR ÚNICO</div>
+            <div class="sprite-description">"Transcends the limits of space and time through quantum manipulation"</div>
+            <div class="sprite-container">
+                <svg class="sprite-svg" id="void-engine" width="200" height="400" viewBox="0 0 200 400">
+                    <defs>
+                        <!-- Gradiente de llama -->
+                        <linearGradient id="flameGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#FFF9C4"/>
+                            <stop offset="40%" stop-color="#FFE082"/>
+                            <stop offset="80%" stop-color="#FFB300"/>
+                            <stop offset="100%" stop-color="transparent"/>
+                        </linearGradient>
+                    </defs>
+                    
+                    <!-- Campo de energía -->
+                    <ellipse cx="100" cy="200" rx="80" ry="180" fill="url(#energyPattern)" opacity="0.3" class="energy-pulse"/>
+                    
+                    <!-- Cuerpo principal del motor -->
+                    <polygon points="60,40 140,40 160,320 40,320" 
+                             fill="url(#goldMetal)" 
+                             stroke="url(#chromeMetal)" 
+                             stroke-width="2" 
+                             class="glow-effect"/>
+                    
+                    <!-- Toberas laterales -->
+                    <rect x="20" y="120" width="40" height="160" 
+                          fill="url(#chromeMetal)" 
+                          stroke="#FFD700" 
+                          stroke-width="1"/>
+                    <rect x="140" y="120" width="40" height="160" 
+                          fill="url(#chromeMetal)" 
+                          stroke="#FFD700" 
+                          stroke-width="1"/>
+                    
+                    <!-- Llamas del motor -->
+                    <polygon points="60,320 140,320 120,400 80,400" 
+                             fill="url(#flameGrad)" 
+                             class="energy-pulse"/>
+                    <polygon points="30,280 50,280 45,360 35,360" 
+                             fill="url(#flameGrad)" 
+                             class="energy-pulse"/>
+                    <polygon points="150,280 170,280 165,360 155,360" 
+                             fill="url(#flameGrad)" 
+                             class="energy-pulse"/>
+                    
+                    <!-- Core central -->
+                    <circle cx="100" cy="200" r="30" fill="url(#energyCore)" class="energy-pulse glow-effect"/>
+                    <circle cx="100" cy="200" r="20" fill="#FFF9C4" opacity="0.8"/>
+                    
+                    <!-- Anillos tecnológicos -->
+                    <circle cx="100" cy="200" r="35" fill="none" stroke="#FFE082" stroke-width="2"/>
+                    <circle cx="100" cy="200" r="45" fill="none" stroke="#FFD700" stroke-width="1"/>
+                    <circle cx="100" cy="200" r="55" fill="none" stroke="#DAA520" stroke-width="1"/>
+                    
+                    <!-- Detalles de energía -->
+                    <g class="energy-pulse">
+                        <rect x="70" y="80" width="60" height="4" fill="#FFE082"/>
+                        <rect x="70" y="120" width="60" height="4" fill="#FFD700"/>
+                        <rect x="70" y="160" width="60" height="4" fill="#FFE082"/>
+                        <rect x="70" y="240" width="60" height="4" fill="#FFD700"/>
+                        <rect x="70" y="280" width="60" height="4" fill="#FFE082"/>
+                    </g>
+                    
+                    <!-- Indicadores de estado -->
+                    <g class="rotate-slow">
+                        <circle cx="100" cy="100" r="3" fill="#FFE082"/>
+                        <circle cx="100" cy="300" r="3" fill="#FFE082"/>
+                        <circle cx="70" cy="200" r="3" fill="#FFD700"/>
+                        <circle cx="130" cy="200" r="3" fill="#FFD700"/>
+                    </g>
+                </svg>
+                
+                <div class="sprite-info">
+                    <div class="stats">
+                        <div class="stat-item"><span>Speed Boost:</span><span style="color: #FFD700;">+200% (MAX)</span></div>
+                        <div class="stat-item"><span>Teleport:</span><span style="color: #FFE082;">Cada 5 seg</span></div>
+                        <div class="stat-item"><span>Habilidad:</span><span style="color: #FF6F00;">Void Jump</span></div>
+                        <div class="stat-item"><span>Efecto:</span><span style="color: #FFD700;">Trail cósmico</span></div>
+                        <div class="stat-item"><span>Rareza:</span><span style="color: #FFD700; font-weight: bold;">UNIQUE</span></div>
+                        <div class="stat-item"><span>Valor:</span><span style="color: #FFD700;">7,000+ MATIC</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentScale = 1.0;
+        
+        function changeScale(newScale) {
+            currentScale = newScale;
+            document.querySelectorAll('.sprite-svg').forEach(svg => {
+                svg.style.transform = `scale(${newScale})`;
+            });
+        }
+        
+        // Efectos de hover interactivos
+        document.querySelectorAll('.sprite-svg').forEach(svg => {
+            svg.addEventListener('mouseenter', () => {
+                svg.style.filter = 'drop-shadow(0 0 40px rgba(255, 215, 0, 0.8)) brightness(1.1)';
+            });
+            
+            svg.addEventListener('mouseleave', () => {
+                svg.style.filter = 'drop-shadow(0 0 20px rgba(255, 215, 0, 0.5))';
+            });
+        });
+        
+        console.log('🚀 Cosmic Defender NFT Collection Visualizer Loaded');
+        console.log('✨ SVG Premium Edition - Vector Graphics Perfection');
+    </script>
+</body>
+</html> 
+ 

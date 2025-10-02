@@ -1,0 +1,45 @@
+/* Reglas de CSS que solo se aplican a la versión móvil */
+
+/* Media Query para pantallas de celular (ancho menor a 768px) */
+@media (max-width: 768px) {
+
+    /* Ajustar el menú principal y el selector de clan */
+    .game-menu .menu-content,
+    .clan-selector .selector-content {
+        width: 90%; /* Ocupar casi todo el ancho */
+        padding: 20px;
+        box-sizing: border-box;
+    }
+
+    .game-menu h1 {
+        font-size: 2.5rem; /* Título más grande */
+    }
+
+    .menu-button {
+        padding: 15px 20px; /* Botones más altos y fáciles de tocar */
+        font-size: 1.2rem;
+        width: 100%; /* Que ocupen todo el ancho del menú */
+        margin-bottom: 15px; /* Espacio entre botones */
+    }
+
+    /* Hacer que la grilla de clanes se muestre en 2 columnas */
+    .clans-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+
+    .clan-option {
+        padding: 15px;
+    }
+
+    .instructions ul {
+        padding-left: 20px; /* Menos sangría en la lista */
+    }
+}
+
+/* Estilos para modo vertical (pantalla más alta que ancha) */
+@media (orientation: portrait) {
+    .clans-grid {
+        grid-template-columns: 1fr; /* Una sola columna en vertical */
+    }
+}

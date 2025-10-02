@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cosmic Defender - Sistema Solar</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .dungeon-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            background: linear-gradient(135deg, #0a0a2a 0%, #1a1a4a 50%, #0a0a2a 100%);
+            overflow: hidden;
+        }
+        
+        .dungeon-ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        .dungeon-menu {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            border: 3px solid #00ffff;
+            border-radius: 15px;
+            padding: 30px;
+            color: white;
+            text-align: center;
+            min-width: 800px;
+        }
+        
+        .planets-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .planet-option {
+            background: rgba(50, 50, 100, 0.5);
+            border: 2px solid #00ffff;
+            border-radius: 15px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: white;
+        }
+        
+        .planet-option:hover {
+            background: rgba(50, 50, 100, 0.8);
+            border-color: #ffff00;
+            transform: scale(1.05);
+        }
+        
+        .planet-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        
+        .planet-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .planet-difficulty {
+            font-size: 14px;
+            color: #ffff00;
+        }
+        
+        .planet-description {
+            font-size: 12px;
+            color: #cccccc;
+            margin-top: 10px;
+        }
+        
+        .back-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #00ffff;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            pointer-events: auto;
+        }
+        
+        .back-button:hover {
+            background: rgba(0, 255, 255, 0.2);
+        }
+        
+        .solar-system-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 50% 50%, #1a1a4a 0%, #0a0a2a 100%);
+        }
+        
+        .stars {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(2px 2px at 20px 30px, #ffffff, transparent),
+                radial-gradient(2px 2px at 40px 70px, #ffffff, transparent),
+                radial-gradient(1px 1px at 90px 40px, #ffffff, transparent),
+                radial-gradient(1px 1px at 130px 80px, #ffffff, transparent),
+                radial-gradient(2px 2px at 160px 30px, #ffffff, transparent);
+            background-repeat: repeat;
+            background-size: 200px 100px;
+            animation: twinkle 3s infinite;
+        }
+        
+        @keyframes twinkle {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+    <div class="dungeon-container">
+        <div class="solar-system-bg">
+            <div class="stars"></div>
+        </div>
+        
+        <div class="dungeon-ui">
+            <button class="back-button" onclick="window.location.href='index.html'">← Volver al PvP</button>
+        </div>
+        
+        <div class="dungeon-menu" id="dungeonMenu">
+            <h1>🌌 Sistema Solar - Dungeons</h1>
+            <p>Explora los 9 planetas del sistema solar en misiones épicas</p>
+            <p>Cada planeta tiene 50 oleadas de enemigos progresivamente más difíciles</p>
+            <p><strong>🎮 MULTIJUGADOR:</strong> Hasta 5 jugadores por planeta. Los bots se convierten en jugadores reales automáticamente.</p>
+            
+            <div class="planets-grid" id="planetsGrid">
+                <a href="mercury.html" class="planet-option">
+                    <div class="planet-icon">☄️</div>
+                    <div class="planet-name">Mercurio</div>
+                    <div class="planet-difficulty">Dificultad: ⭐</div>
+                    <div class="planet-description">El planeta más cercano al Sol. Temperaturas extremas y gravedad baja.</div>
+                </a>
+                
+                <a href="venus.html" class="planet-option">
+                    <div class="planet-icon">♀️</div>
+                    <div class="planet-name">Venus</div>
+                    <div class="planet-difficulty">Dificultad: ⭐⭐</div>
+                    <div class="planet-description">Planeta infernal con atmósfera tóxica y lluvia ácida.</div>
+                </a>
+                
+                <a href="earth.html" class="planet-option">
+                    <div class="planet-icon">🌍</div>
+                    <div class="planet-name">Tierra</div>
+                    <div class="planet-difficulty">Dificultad: ⭐⭐⭐</div>
+                    <div class="planet-description">Nuestro hogar. Enemigos adaptados a la gravedad terrestre.</div>
+                </a>
+                
+                <a href="mars.html" class="planet-option">
+                    <div class="planet-icon">♂️</div>
+                    <div class="planet-name">Marte</div>
+                    <div class="planet-difficulty">Dificultad: ⭐⭐⭐</div>
+                    <div class="planet-description">El planeta rojo. Polvo y tormentas de arena constantes.</div>
+                </a>
+                
+                <a href="jupiter.html" class="planet-option">
+                    <div class="planet-icon">♃</div>
+                    <div class="planet-name">Júpiter</div>
+                    <div class="planet-difficulty">Dificultad: ⭐⭐⭐⭐</div>
+                    <div class="planet-description">El gigante gaseoso. Tormentas eléctricas y gravedad extrema.</div>
+                </a>
+                
+                <a href="saturn.html" class="planet-option">
+                    <div class="planet-icon">♄</div>
+                    <div class="planet-name">Saturno</div>
+                    <div class="planet-difficulty">Dificultad: ⭐⭐⭐⭐</div>
+                    <div class="planet-description">El señor de los anillos. Campos de asteroides y lunas hostiles.</div>
+                </a>
+                
+                <a href="uranus.html" class="planet-option">
+                    <div class="planet-icon">♅</div>
+                    <div class="planet-name">Urano</div>
+                    <div class="planet-difficulty">Dificultad: ⭐⭐⭐⭐⭐</div>
+                    <div class="planet-description">El planeta helado. Temperaturas bajo cero y vientos supersónicos.</div>
+                </a>
+                
+                <a href="neptune.html" class="planet-option">
+                    <div class="planet-icon">♆</div>
+                    <div class="planet-name">Neptuno</div>
+                    <div class="planet-difficulty">Dificultad: ⭐⭐⭐⭐⭐</div>
+                    <div class="planet-description">El planeta azul profundo. Presión atmosférica aplastante.</div>
+                </a>
+                
+                <a href="pluto.html" class="planet-option">
+                    <div class="planet-icon">♇</div>
+                    <div class="planet-name">Plutón</div>
+                    <div class="planet-difficulty">Dificultad: ⭐⭐⭐⭐⭐⭐</div>
+                    <div class="planet-description">El planeta enano. El desafío final del sistema solar.</div>
+                </a>
+            </div>
+            
+            <div class="instructions">
+                <h3>Instrucciones:</h3>
+                <ul>
+                    <li>Cada planeta tiene 50 oleadas de enemigos</li>
+                    <li>Oleada 1: 20 enemigos, Oleada 2: 30 enemigos, etc.</li>
+                    <li>Los enemigos se vuelven más fuertes cada oleada</li>
+                    <li>Completa todas las oleadas para conquistar el planeta</li>
+                    <li>Gana EXP, monedas y equipamiento raro</li>
+                    <li>¡Derrota a los bosses finales para recompensas épicas!</li>
+                    <li><strong>Multijugador:</strong> Los bots se convierten en jugadores reales cuando se unen</li>
+                    <li><strong>Cooperación:</strong> Trabaja en equipo con otros jugadores para vencer</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 
