@@ -3085,6 +3085,25 @@ class CosmicDefender {
     // Initialize multiplayer system (this will add the player and bots)
     this.initializeMultiplayer();
 
+    // FIX: Enviar datos completos del mundo al worker DESPUÉS de crear jugadores y bots
+    if (this.useWebWorkers && this.botWorker) {
+      console.log("🤖 Actualizando worker con jugadores y bots inicializados");
+      this.botWorker.postMessage({
+        type: "init",
+        data: {
+          worldData: {
+            worldSize: this.worldSize,
+            clans: this.clans,
+            clanSafeZones: this.clanSafeZones,
+            centralSafeZone: this.centralSafeZone,
+            obstacles: this.obstacles,
+            players: this.players, // Ahora SÍ tiene datos
+          },
+          performanceSettings: this.performanceSettings,
+        },
+      });
+    }
+
     // Load equipment from market
     this.loadEquipmentFromMarket();
 
@@ -3309,7 +3328,30 @@ class CosmicDefender {
           results.forEach((updatedBot) => {
             const bot = this.bots.find((b) => b.id === updatedBot.id);
             if (bot) {
+              // FIX: Preservar propiedades que el hilo principal controla
+              const preservedHealth = bot.health;
+              const preservedMaxHealth = bot.maxHealth;
+              const preservedIsDead = bot.isDead;
+              const preservedLastDamageFrom = bot.lastDamageFrom;
+
+              // Si el bot está muerto, preservar también la posición (respawn)
+              const preservedX = bot.isDead ? bot.x : null;
+              const preservedY = bot.isDead ? bot.y : null;
+
+              // Actualizar posición y lógica de IA desde el worker
               Object.assign(bot, updatedBot);
+
+              // Restaurar propiedades que el hilo principal controla
+              bot.health = preservedHealth;
+              bot.maxHealth = preservedMaxHealth;
+              bot.isDead = preservedIsDead;
+              bot.lastDamageFrom = preservedLastDamageFrom;
+
+              // Si estaba muerto, restaurar posición de respawn
+              if (preservedX !== null && preservedY !== null) {
+                bot.x = preservedX;
+                bot.y = preservedY;
+              }
             }
           });
         }
@@ -3557,7 +3599,7 @@ class CosmicDefender {
       return;
     }
 
-    // Check collision with obstacles (allow passing through player's base)
+    // Check collision with obstacles (allow passing through destroyed bases)
     let canMove = true;
     this.obstacles.forEach((obstacle) => {
       if (
@@ -3571,9 +3613,10 @@ class CosmicDefender {
           obstacle,
         )
       ) {
-        // Allow passing through player's base structure
-        if (obstacle.type === "base" && obstacle.clan === this.playerClan) {
-          // Can pass through
+        // FIX: Permitir pasar por bases destruidas para recoger monedas
+        // También permitir pasar por la base del propio clan
+        if (obstacle.type === "base" && (obstacle.clan === this.playerClan || obstacle.isDestroyed)) {
+          // Can pass through own base or destroyed bases
         } else {
           canMove = false;
         }
@@ -3693,12 +3736,14 @@ class CosmicDefender {
     // Always use Web Worker if available for performance
     if (this.useWebWorkers && this.botWorker) {
       // Send current bot and player data to the worker
+      // OPTIMIZACIÓN: Solo enviamos datos que cambian frecuentemente
       this.botWorker.postMessage({
         type: "updateBots",
         data: {
           bots: this.bots,
           worldData: {
-            // Only send dynamic data
+            // Solo enviar datos dinámicos (players cambia constantemente)
+            // obstacles es estático, ya está en el worker desde init
             players: this.players,
           },
         },
@@ -3759,21 +3804,27 @@ class CosmicDefender {
       const spawnX = safeZone.x + 100 + Math.random() * 200; // Within safe zone
       const spawnY = safeZone.y + 100 + Math.random() * 200; // Within safe zone
 
-      player.x = spawnX;
-      player.y = spawnY;
-      player.health = player.maxHealth;
-      player.target = null;
-      player.state = "patrol";
-
-      // Add respawn message after a delay
+      // FIX: Respawn con delay de 3 segundos para evitar drops múltiples
+      // El bot permanece muerto (invisible y sin colisión) durante 3 segundos
       setTimeout(() => {
+        // Verificar que el bot todavía existe
+        if (!this.players.includes(player) && !this.bots.includes(player)) return;
+
+        player.x = spawnX;
+        player.y = spawnY;
+        player.health = player.maxHealth;
+        player.isDead = false; // Reactivar el bot
+        player.target = null;
+        player.state = "patrol";
+
+        // Add respawn message
         this.addDamageNumber(
           "RESPAWN",
           spawnX + player.width / 2,
           spawnY - 20,
           "#00ff00",
         );
-      }, 1000);
+      }, 3000); // 3 segundos de delay
     }
   }
 
@@ -4009,15 +4060,23 @@ class CosmicDefender {
       this.bullets.splice(maxBullets);
     }
 
-    this.bullets.forEach((bullet, bulletIndex) => {
+    // FIX: Iterar hacia atrás para evitar problemas con splice
+    // Esto asegura que eliminar elementos no afecte los índices pendientes
+    for (let bulletIndex = this.bullets.length - 1; bulletIndex >= 0; bulletIndex--) {
+      const bullet = this.bullets[bulletIndex];
+
       LogManager.log(
         "debug",
         "[Disparo P4] updateBullets: Actualizando posición de la bala.",
         { bulletX: bullet.x, bulletY: bullet.y },
       );
+
       // Move bullet using angle
       bullet.x += Math.cos(bullet.angle) * bullet.speed;
       bullet.y += Math.sin(bullet.angle) * bullet.speed;
+
+      // Flag para marcar si la bala debe ser eliminada
+      let bulletHit = false;
 
       // Remove bullets that are off world
       if (
@@ -4027,16 +4086,28 @@ class CosmicDefender {
         bullet.y > this.worldSize
       ) {
         this.bullets.splice(bulletIndex, 1);
-        return;
+        continue; // Siguiente bala
       }
 
-      // Check collision with obstacles (except player's base)
-      this.obstacles.forEach((obstacle) => {
-        if (this.checkCollision(bullet, obstacle)) {
-          // Allow bullets to pass through player's base
-          if (obstacle.type === "base" && obstacle.clan === this.playerClan) {
-            // Can pass through
-          } else {
+      // Determinar el clan del tirador UNA SOLA VEZ para optimización
+      let shooterClan = null;
+      if (bullet.owner === "player") {
+        shooterClan = this.playerClan;
+      } else if (bullet.owner) {
+        const bot = this.bots.find((b) => b.id === bullet.owner);
+        shooterClan = bot?.clan;
+      }
+
+      // Check collision with obstacles (except player's base and friendly bases)
+      if (!bulletHit) {
+        for (let i = 0; i < this.obstacles.length; i++) {
+          const obstacle = this.obstacles[i];
+          if (this.checkCollision(bullet, obstacle)) {
+            // Allow bullets to pass through own base and friendly bases
+            if (obstacle.type === "base" && obstacle.clan === shooterClan) {
+              continue; // No hacer daño a bases aliadas
+            }
+
             // Bullet hits obstacle - verificar si es destructible
             if (obstacle.isDestructible && !obstacle.isDestroyed) {
               obstacle.health -= bullet.damage;
@@ -4055,16 +4126,22 @@ class CosmicDefender {
               }
             }
 
-            this.bullets.splice(bulletIndex, 1);
-            return;
+            bulletHit = true;
+            break; // Salir del loop de obstáculos
           }
         }
-      });
+      }
 
-      // Check collision with orbital satellites
-      if (this.orbitalSatellites) {
-        this.orbitalSatellites.forEach(satellite => {
+      // Check collision with orbital satellites (no dañar satélites aliados)
+      if (!bulletHit && this.orbitalSatellites) {
+        for (let i = 0; i < this.orbitalSatellites.length; i++) {
+          const satellite = this.orbitalSatellites[i];
           if (!satellite.isDestroyed && this.checkCollision(bullet, satellite)) {
+            // Verificar si el satélite pertenece al mismo clan (usa clanId)
+            if (satellite.clanId === shooterClan) {
+              continue; // No hacer daño a satélites aliados
+            }
+
             satellite.health -= bullet.damage;
 
             // Mostrar número de daño
@@ -4080,16 +4157,22 @@ class CosmicDefender {
               this.destroyStructure(satellite, 'satellite', bullet.owner);
             }
 
-            this.bullets.splice(bulletIndex, 1);
-            return;
+            bulletHit = true;
+            break; // Salir del loop de satélites
           }
-        });
+        }
       }
 
-      // Check collision with orbital towers
-      if (this.orbitalTowers) {
-        this.orbitalTowers.forEach(tower => {
+      // Check collision with orbital towers (no dañar torres aliadas)
+      if (!bulletHit && this.orbitalTowers) {
+        for (let i = 0; i < this.orbitalTowers.length; i++) {
+          const tower = this.orbitalTowers[i];
           if (!tower.isDestroyed && this.checkCollision(bullet, tower)) {
+            // Verificar si la torre pertenece al mismo clan (usa clanId)
+            if (tower.clanId === shooterClan) {
+              continue; // No hacer daño a torres aliadas
+            }
+
             tower.health -= bullet.damage;
 
             // Mostrar número de daño
@@ -4105,107 +4188,101 @@ class CosmicDefender {
               this.destroyStructure(tower, 'tower', bullet.owner);
             }
 
-            this.bullets.splice(bulletIndex, 1);
-            return;
+            bulletHit = true;
+            break; // Salir del loop de torres
           }
-        });
+        }
       }
 
       // Check collision with players (for bot bullets and player bullets)
-      if (bullet.owner) {
-        this.players.forEach((player, playerIndex) => {
-          if (player.health > 0) {
-            // Determine shooter clan
-            let shooterClan = null;
-            if (bullet.owner === "player") {
-              shooterClan = this.playerClan;
-            } else {
-              shooterClan = this.bots.find((b) => b.id === bullet.owner)?.clan;
-            }
+      if (!bulletHit && bullet.owner && shooterClan !== null) {
+        for (let i = 0; i < this.players.length; i++) {
+          const player = this.players[i];
 
-            // Check if this is friendly fire (same clan)
-            if (shooterClan !== null && player.clan === shooterClan) {
-              // LogManager.log('info', `Friendly fire prevented: ${bullet.owner} (${this.clans[shooterClan].name}) -> ${player.name} (${this.clans[player.clan].name})`);
-              return; // Skip - same clan, no damage
-            }
-
-            // Check collision with enemy players
-            if (shooterClan !== null && player.clan !== shooterClan) {
-              // Check if player is in their safe zone (protected)
-              const isInSafeZone = this.isPlayerInSafeZone(player);
-
-              // Don't damage players in their safe zone
-              if (!isInSafeZone && this.checkCollision(bullet, player)) {
-                // Calcular daño final (considerar escudo de bots)
-                let finalDamage = bullet.damage;
-                if (!player.isHuman && player.shieldActive) {
-                  finalDamage = Math.floor(bullet.damage * 0.5); // 50% menos daño con escudo
-                }
-
-                // Trackear quién hizo el último daño
-                player.lastDamageFrom = bullet.owner;
-
-                // LogManager.log('info', `Damage dealt: ${bullet.owner} (${this.clans[shooterClan].name}) -> ${player.name} (${this.clans[player.clan].name}) = ${finalDamage}`);
-                player.health -= finalDamage;
-                this.bullets.splice(bulletIndex, 1);
-
-                // Add damage number
-                this.addDamageNumber(
-                  finalDamage,
-                  player.x + player.width / 2,
-                  player.y + player.height / 2,
-                  "#ff0000",
-                );
-
-                // Si el jugador murió, dropear monedas
-                if (player.health <= 0) {
-                  // Dropear monedas siempre que alguien mate a un bot
-                  this.dropCoins(
-                    player.x + player.width / 2,
-                    player.y + player.height / 2,
-                    "bot",
-                    player.isElite,
-                    player.isBoss,
-                    player.lastDamageFrom, // Quién lo mató
-                  );
-                  const botType = player.isBoss ? "(BOSS)" : player.isElite ? "(ELITE)" : "(NORMAL)";
-                  console.log(
-                    `💰 ${player.name} ${botType} dropeó monedas (último hit: ${player.lastDamageFrom})`,
-                  );
-                }
-
-                // Add hit particles - REMOVED to prevent covering ships
-                /*
-                                for (let i = 0; i < 8; i++) {
-                                    this.particles.push({
-                                        x: player.x + player.width / 2,
-                                        y: player.y + player.height / 2,
-                                        vx: (Math.random() - 0.5) * 3,
-                                        vy: (Math.random() - 0.5) * 3,
-                                        life: 15,
-                                        color: '#ff0000'
-                                    });
-                                }
-                                */
-
-                // Check if player died
-                if (player.health <= 0) {
-                  this.respawnPlayer(player);
-                }
-                return;
-              }
-            }
+          if (player.health <= 0 || player.isDead) {
+            continue; // Saltar jugadores muertos
           }
-        });
+
+          // Check if this is friendly fire (same clan) - NO HACER DAÑO
+          if (player.clan === shooterClan) {
+            continue; // Saltar aliados
+          }
+
+          // Solo verificar colisión con jugadores enemigos
+          // Check if player is in their safe zone (protected)
+          const isInSafeZone = this.isPlayerInSafeZone(player);
+
+          // Don't damage players in their safe zone
+          if (!isInSafeZone && this.checkCollision(bullet, player)) {
+            // Calcular daño final (considerar escudo de bots)
+            let finalDamage = bullet.damage;
+            if (!player.isHuman && player.shieldActive) {
+              finalDamage = Math.floor(bullet.damage * 0.5); // 50% menos daño con escudo
+            }
+
+            // Trackear quién hizo el último daño
+            player.lastDamageFrom = bullet.owner;
+
+            // LogManager.log('info', `Damage dealt: ${bullet.owner} (${this.clans[shooterClan].name}) -> ${player.name} (${this.clans[player.clan].name}) = ${finalDamage}`);
+            player.health -= finalDamage;
+
+            // Add damage number
+            this.addDamageNumber(
+              finalDamage,
+              player.x + player.width / 2,
+              player.y + player.height / 2,
+              "#ff0000",
+            );
+
+            // Si el jugador murió POR PRIMERA VEZ, dropear monedas y respawnear
+            if (player.health <= 0 && !player.isDead) {
+              // Marcar como muerto para evitar drops duplicados
+              player.isDead = true;
+              player.health = 0; // Fijar en 0 para evitar valores negativos
+
+              // Dropear monedas siempre que alguien mate a un bot
+              this.dropCoins(
+                player.x + player.width / 2,
+                player.y + player.height / 2,
+                "bot",
+                player.isElite,
+                player.isBoss,
+                player.lastDamageFrom, // Quién lo mató
+              );
+              const botType = player.isBoss ? "(BOSS)" : player.isElite ? "(ELITE)" : "(NORMAL)";
+              console.log(
+                `💰 ${player.name} ${botType} dropeó monedas (último hit: ${player.lastDamageFrom})`,
+              );
+
+              // Respawn del jugador
+              this.respawnPlayer(player);
+            }
+
+            bulletHit = true;
+            break; // Salir del loop de jugadores
+          }
+        }
       }
-    });
+
+      // Eliminar la bala si golpeó algo
+      if (bulletHit) {
+        this.bullets.splice(bulletIndex, 1);
+      }
+    }
   }
 
   updateEnemyBullets() {
-    this.enemyBullets.forEach((bullet, bulletIndex) => {
+    // FIX: Iterar hacia atrás para evitar problemas con splice
+    // Esta función maneja balas de enemigos antiguos (usa vx/vy en lugar de angle)
+    for (let bulletIndex = this.enemyBullets.length - 1; bulletIndex >= 0; bulletIndex--) {
+      const bullet = this.enemyBullets[bulletIndex];
+
       // Move bullet
       bullet.x += bullet.vx;
       bullet.y += bullet.vy;
+
+      // Flag para marcar si la bala debe ser eliminada
+      let bulletHit = false;
 
       // Remove bullets that are off world
       if (
@@ -4215,16 +4292,19 @@ class CosmicDefender {
         bullet.y > this.worldSize
       ) {
         this.enemyBullets.splice(bulletIndex, 1);
-        return;
+        continue; // Siguiente bala
       }
 
       // Check collision with obstacles (except player's base)
-      this.obstacles.forEach((obstacle) => {
-        if (this.checkCollision(bullet, obstacle)) {
-          // Allow bullets to pass through player's base
-          if (obstacle.type === "base" && obstacle.clan === this.playerClan) {
-            // Can pass through
-          } else {
+      if (!bulletHit) {
+        for (let i = 0; i < this.obstacles.length; i++) {
+          const obstacle = this.obstacles[i];
+          if (this.checkCollision(bullet, obstacle)) {
+            // Allow bullets to pass through player's base
+            if (obstacle.type === "base" && obstacle.clan === this.playerClan) {
+              continue; // No hacer daño a la base del jugador
+            }
+
             // Bullet hits obstacle - verificar si es destructible
             if (obstacle.isDestructible && !obstacle.isDestroyed) {
               obstacle.health -= bullet.damage;
@@ -4243,15 +4323,16 @@ class CosmicDefender {
               }
             }
 
-            this.enemyBullets.splice(bulletIndex, 1);
-            return;
+            bulletHit = true;
+            break; // Salir del loop de obstáculos
           }
         }
-      });
+      }
 
       // Check collision with orbital satellites
-      if (this.orbitalSatellites) {
-        this.orbitalSatellites.forEach(satellite => {
+      if (!bulletHit && this.orbitalSatellites) {
+        for (let i = 0; i < this.orbitalSatellites.length; i++) {
+          const satellite = this.orbitalSatellites[i];
           if (!satellite.isDestroyed && this.checkCollision(bullet, satellite)) {
             satellite.health -= bullet.damage;
 
@@ -4266,15 +4347,16 @@ class CosmicDefender {
               this.destroyStructure(satellite, 'satellite', bullet.owner);
             }
 
-            this.enemyBullets.splice(bulletIndex, 1);
-            return;
+            bulletHit = true;
+            break; // Salir del loop de satélites
           }
-        });
+        }
       }
 
       // Check collision with orbital towers
-      if (this.orbitalTowers) {
-        this.orbitalTowers.forEach(tower => {
+      if (!bulletHit && this.orbitalTowers) {
+        for (let i = 0; i < this.orbitalTowers.length; i++) {
+          const tower = this.orbitalTowers[i];
           if (!tower.isDestroyed && this.checkCollision(bullet, tower)) {
             tower.health -= bullet.damage;
 
@@ -4289,14 +4371,14 @@ class CosmicDefender {
               this.destroyStructure(tower, 'tower', bullet.owner);
             }
 
-            this.enemyBullets.splice(bulletIndex, 1);
-            return;
+            bulletHit = true;
+            break; // Salir del loop de torres
           }
-        });
+        }
       }
 
       // Check collision with player
-      if (this.checkCollision(bullet, this.player)) {
+      if (!bulletHit && this.player && this.checkCollision(bullet, this.player)) {
         // Check if player is in their safe zone (protected)
         const isInSafeZone = this.isPlayerInSafeZone(this.player);
 
@@ -4332,11 +4414,19 @@ class CosmicDefender {
           if (this.player.health <= 0) {
             this.respawnPlayer(this.player);
           }
-        }
 
+          bulletHit = true;
+        } else {
+          // Bala golpeó pero el jugador está protegido - eliminar bala de todos modos
+          bulletHit = true;
+        }
+      }
+
+      // Eliminar la bala si golpeó algo
+      if (bulletHit) {
         this.enemyBullets.splice(bulletIndex, 1);
       }
-    });
+    }
   }
 
   addDamageNumber(damage, x, y, color) {
@@ -4391,7 +4481,7 @@ class CosmicDefender {
         collected: false,
         vx: (Math.random() - 0.5) * 2,
         vy: (Math.random() - 0.5) * 2,
-        life: 300, // 5 seconds to collect
+        life: 3600, // 60 segundos a 60 FPS = 3600 frames
         droppedBy: droppedBy, // Quién dropeó la moneda
         droppedAt: now, // Timestamp de cuando se dropeó
       });
@@ -4467,16 +4557,22 @@ class CosmicDefender {
   updateCoins() {
     const now = Date.now();
 
-    this.coinObjects.forEach((coin, index) => {
+    // FIX: Iterar hacia atrás para evitar problemas con splice
+    for (let index = this.coinObjects.length - 1; index >= 0; index--) {
+      const coin = this.coinObjects[index];
+
       // Move coin slightly
       coin.x += coin.vx;
       coin.y += coin.vy;
       coin.life--;
 
+      // Flag para marcar si la moneda debe ser eliminada
+      let coinCollected = false;
+
       // Check collision with player (el jugador siempre puede recoger)
       if (this.checkCollision(coin, this.player)) {
         this.coins += coin.value;
-        this.coinObjects.splice(index, 1);
+        coinCollected = true;
 
         // Add collection particles (reduced for performance)
         for (let i = 0; i < 2; i++) {
@@ -4489,37 +4585,40 @@ class CosmicDefender {
             color: "#ffd700",
           });
         }
-        return;
       }
 
       // Check collision with bots (solo después de 3 segundos)
-      const coinAge = now - (coin.droppedAt || 0);
-      const canBotsCollect = coinAge >= 3000; // 3 segundos
+      if (!coinCollected) {
+        const coinAge = now - (coin.droppedAt || 0);
+        const canBotsCollect = coinAge >= 3000; // 3 segundos
 
-      if (canBotsCollect) {
-        this.players.forEach((player) => {
-          if (!player.isHuman && player.health > 0 && this.checkCollision(coin, player)) {
-            // Bot recoge la moneda (no la añade al jugador, simplemente desaparece)
-            this.coinObjects.splice(index, 1);
+        if (canBotsCollect) {
+          for (let i = 0; i < this.players.length; i++) {
+            const player = this.players[i];
+            if (!player.isHuman && player.health > 0 && !player.isDead && this.checkCollision(coin, player)) {
+              // Bot recoge la moneda (no la añade al jugador, simplemente desaparece)
+              coinCollected = true;
 
-            // Pequeña partícula para indicar que un bot recogió la moneda
-            this.particles.push({
-              x: coin.x + coin.width / 2,
-              y: coin.y + coin.height / 2,
-              vx: 0,
-              vy: -1,
-              life: 15,
-              color: "#888888",
-            });
+              // Pequeña partícula para indicar que un bot recogió la moneda
+              this.particles.push({
+                x: coin.x + coin.width / 2,
+                y: coin.y + coin.height / 2,
+                vx: 0,
+                vy: -1,
+                life: 15,
+                color: "#888888",
+              });
+              break; // Salir del loop de jugadores
+            }
           }
-        });
+        }
       }
 
-      // Remove coins that have expired
-      if (coin.life <= 0) {
+      // Remove coins that have expired or were collected
+      if (coin.life <= 0 || coinCollected) {
         this.coinObjects.splice(index, 1);
       }
-    });
+    }
   }
 
   checkCollision(rect1, rect2) {
@@ -7825,27 +7924,21 @@ class CosmicDefender {
   }
 
   isPlayerInSafeZone(player) {
-    // Zona neutral central (circular)
+    // FIX: SOLO la ISS (estación espacial central) es zona segura
+    // PVP habilitado en todas las bases de clanes
+
+    // Zona neutral central - ISS orbital (circular)
     if (this.iss && this.centralSafeZone) {
       const dx = player.x - this.iss.x;
       const dy = player.y - this.iss.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
-
       if (distance <= this.centralSafeZone.radius) {
-        return true;
+        return true; // Solo la ISS es zona segura
       }
     }
-    // Zonas de clan
-    const playerSafeZone = this.clanSafeZones.find(
-      (zone) => zone.clan === player.clan,
-    );
-    if (!playerSafeZone) return false;
-    return (
-      player.x >= playerSafeZone.x &&
-      player.x <= playerSafeZone.x + playerSafeZone.width &&
-      player.y >= playerSafeZone.y &&
-      player.y <= playerSafeZone.y + playerSafeZone.height
-    );
+
+    // Zonas de clan deshabilitadas - PVP habilitado
+    return false;
   }
 
   startBaseAssault(bot) {
@@ -8115,7 +8208,7 @@ class CosmicDefender {
         // Draw all players (bots)
         // LogManager.log('info', `Drawing ${this.players.length} players/bots`);
         this.players.forEach((player, index) => {
-            if (player.health > 0 && !player.isHuman) { // Only draw bots, not the player
+            if (player.health > 0 && !player.isHuman && !player.isDead) { // Only draw alive bots
                 const screenPos = this.worldToScreen(player.x, player.y);
                 const clanColor = this.clans[player.clan].color;
                 const isAlly = player.clan === this.playerClan;
